@@ -15,14 +15,14 @@ extern "C" {
 #include <sys/types.h>
 }
 #include <boost/iostreams/copy.hpp>
-#include <boost/iostreams/filter/zlib.hpp>
+#include <boost/iostreams/filter/gzip.hpp>
 #include <boost/iostreams/filtering_streambuf.hpp>
 
 #define PADDING 10
 #define DATA_DIR "../data/"
 #define HOSTAGE_FILE "hostages.af"
 #define HOSTAGE_ARCHIVE "hostages.tar"
-#define HOSTAGE_COMPRESSED "hostages.tar.z"
+#define HOSTAGE_COMPRESSED "hostages.tar.gz"
 #define FILE_DELIM '/'
 #define SUGGESTED_HOURS 8
 
@@ -124,7 +124,7 @@ AlarmFuckLauncher::AlarmFuckLauncher() :
 		dataDir = std::string(dirname(exePath)) + FILE_DELIM + DATA_DIR;
 	} else dataDir = DATA_DIR;
 
-	fullHostageFilePath = dataDir + FILE_DELIM + HOSTAGE_FILE;
+	fullHostageFilePath = dataDir + HOSTAGE_FILE;
 	if(access(fullHostageFilePath.c_str(), F_OK) == 0){
 		std::cout << "Found hostage file " << HOSTAGE_FILE << std::endl;
 		if(pathHashList.import_file(fullHostageFilePath.c_str())){
@@ -246,7 +246,7 @@ bool AlarmFuckLauncher::write_hostage_archive(){
 	double currentSize = 0, totalSize = userPathHashList.get_size();
 	TAR *tarStrucPtr = new TAR;
 	// check for errors opening - the TAR_GNU option is necessary for files with long names
-	std::string fullHostageArchivePath = dataDir + FILE_DELIM + HOSTAGE_ARCHIVE;
+	std::string fullHostageArchivePath = dataDir + HOSTAGE_ARCHIVE;
 	if( tar_open(&tarStrucPtr, fullHostageArchivePath.c_str(), NULL, O_WRONLY | O_CREAT | O_TRUNC, 0755, TAR_GNU) == -1){
 		error_to_user("Error opening " HOSTAGE_ARCHIVE);
 		return false;
@@ -379,12 +379,14 @@ void AlarmFuckLauncher::on_ok_button_click(){
 	if(!write_hostage_archive()) return;
 
 	// TODO: safely erase all the previously existing files
-	//std::ofstream fileOut(HOSTAGE_COMPRESSED, std::ios_base::out | std::ios_base::binary);
-	//boost::iostreams::filtering_streambuf<boost::iostreams::output> out;
-	//out.push(boost::iostreams::zlib_compressor());
-	//out.push(fileOut);
-	//std::ifstream fileIn(HOSTAGE_ARCHIVE, std::ios_base::in | std::ios_base::binary);
-	//boost::iostreams::copy(fileIn, out);
+	std::ofstream fileOut(dataDir + HOSTAGE_COMPRESSED, std::ios_base::out | std::ios_base::binary);
+	boost::iostreams::filtering_streambuf<boost::iostreams::output> out;
+	out.push(boost::iostreams::gzip_compressor());
+	out.push(fileOut);
+	std::ifstream fileIn(dataDir + HOSTAGE_ARCHIVE, std::ios_base::in | std::ios_base::binary);
+	boost::iostreams::copy(fileIn, out);
+	out.pop();
+	fileIn.close();
 	if(!perform_rtc_check()) return;
 
 	Glib::DateTime finalTimeCheck = Glib::DateTime::create_now_local();
