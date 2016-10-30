@@ -64,7 +64,7 @@ AlarmFuck::AlarmFuck()
 		exePath[exePathSize] = '\0';
 		audioPath += std::string(dirname(exePath)) + "/../data/rullGenocide.oga";
 		std::cout << audioPath << std::endl;
-	} else audioPath = "/../data/rullGenocide.oga";
+	} else audioPath = "../data/rullGenocide.oga";
 
 	// Initializes the audio bits
 	ca_context_create(&context);

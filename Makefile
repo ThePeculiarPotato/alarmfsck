@@ -6,9 +6,7 @@ CC=g++ -g -Wno-deprecated-declarations
 COMPILE_DEPS=gtkmm-3.0 libcanberra libcanberra-gtk3
 CFLAGS=-I$(IDIR) `pkg-config --cflags $(COMPILE_DEPS)`
 LIBS= `pkg-config --libs $(COMPILE_DEPS)`
-UGLY_SUPPLEMENT_STRING= /usr/lib/x86_64-linux-gnu/libboost_iostreams.so.1.61.0 \
--lbsd -ltar -I/usr/include/boost/iostreams \
--I/usr/include/boost/iostreams/filter
+UGLY_SUPPLEMENT_STRING= $(BINDIR)/libboost_iostreams.so.1.61.0 -lbsd -ltar
 
 # tell make where to look for types of files
 vpath %.h $(IDIR)
@@ -29,17 +27,13 @@ RINGEROBJ = alarmfuck.o
 LAUNCHEROBJ = aflaunch.o affilechooser.o pathhashlist.o
 
 # all the phony targets
-.PHONY: move filetree all auth clean
+.PHONY: move all auth clean
 
 # default make procedure
-all: filetree $(REXEC) $(LEXEC) $(HEXEC) move
+all: $(REXEC) $(LEXEC) $(HEXEC) move
 
 # to make parallel execution possible
 move: $(REXEC) $(LEXEC) $(HEXEC)
-
-# make folders if absent
-filetree:
-	@if [ ! -d "$(BINDIR)" ]; then mkdir $(BINDIR); fi
 
 # object compilation rule
 %.o: %.cc

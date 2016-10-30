@@ -4,7 +4,7 @@ every piece of science ever written on waking up effectively but gets the job
 done. It encrypts a set of files of your choosing, hibernates the computer,
 wakes it up at the requested time and presents you with a maths problem,
 accompanied by horrible loud screeching sounds. Upon solving the maths problem
-your files are unencrypted while closing the program any other way means they
+your files are unencrypted, while closing the program any other way means they
 are lost forever.
 
 This is a C++ project utilizing the GTK widget toolkit.
@@ -20,11 +20,9 @@ code to compile:
 - libbsd
 - libboost-iostreams
 
-The last of these has not been playing nice with pkg-config and the explicit
-location of the libboost_iostreams.so shared object and header files had to be
-used in the makefile. These locations might not be the same on your system,
-please check and modify accordingly. I might bundle the relevant files with the
-project later.
+The last of these has not been playing nice with pkg-config so the shared
+library object has been included and can be found in the bin/ directory. You
+still must have the headers installed.
 
 COMPILING AND RUNNING
 
@@ -46,3 +44,7 @@ https://creativecommons.org/licenses/by/3.0/). The clips are as follows:
 "Angry Chipmunk" by Mike Koenig, http://soundbible.com/1268-Angry-Chipmunk.html  
 "Cat Scream" by soundbible.com contributor "Ca9", http://soundbible.com/1509-Cat-Scream.html  
 "Screaming Hawk" by soundbible.com contributor "PsychoBird", http://soundbible.com/1517-Screaming-Hawk.html  
+
+-----------
+
+2016, Matjaz Payrits
