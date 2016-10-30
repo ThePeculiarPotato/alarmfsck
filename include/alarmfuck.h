@@ -42,6 +42,8 @@ protected:
 
 	// file-tree
 	std::string baseDir;
+	bool hasHostages;
+	bool decompress_hostage_archive();
 
 	//Multithreading
 	Glib::Dispatcher dispatcher;

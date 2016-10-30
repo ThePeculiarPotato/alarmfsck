@@ -1,5 +1,6 @@
 #include "alarmfuck.h"
 #include <iostream>
+#include <fstream>
 #include <canberra-gtk.h>
 #include <gtkmm/application.h>
 #include <glibmm/random.h>
@@ -10,6 +11,9 @@ extern "C" {
 #include <libgen.h>
 #include <sys/types.h>
 }
+#include <boost/iostreams/copy.hpp>
+#include <boost/iostreams/filter/gzip.hpp>
+#include <boost/iostreams/filtering_streambuf.hpp>
 
 #define CONTEXT_ID 1
 
@@ -31,8 +35,8 @@ AlarmFuck::AlarmFuck()
 
 	// Random Stuff
 	Glib::Rand randomGen;
-	randNo1 = randomGen.get_int_range(1, 9999);
-	randNo2 = randomGen.get_int_range(1, 9999);
+	randNo1 = randomGen.get_int_range(1, 199);
+	randNo2 = randomGen.get_int_range(1, 199);
 	std::stringstream ss;
 	ss << randNo1 << " * " << randNo2;
 
@@ -71,6 +75,7 @@ AlarmFuck::AlarmFuck()
 			baseDir = "../";
 		} else {
 			baseDir = std::string(pathCand) + FILE_DELIM;
+			// DEBUG
 			std::cout << baseDir << std::endl;
 		}
 	} else baseDir = "../";
@@ -84,6 +89,9 @@ AlarmFuck::AlarmFuck()
 	ca_proplist_sets(props, CA_PROP_MEDIA_FILENAME, audioPath.c_str());
 
 	// TODO: encrypt the hostage archive
+	hasHostages = (access(std::string(baseDir + DATA_DIR + HOSTAGE_COMPRESSED).c_str(), F_OK) == 0);
+	// DEBUG
+	std::cout << hasHostages << std::endl;
 
 	//start the horrible loop
 	workerThread =
@@ -140,6 +148,23 @@ void AlarmFuck::on_button_clicked()
 		int errorCode = ca_context_cancel(context, CONTEXT_ID);
 		if (errorCode < 0) puts( ca_strerror( errorCode ) );
 	}
+	if(hasHostages){
+		decompress_hostage_archive();
+	}
+}
+
+bool AlarmFuck::decompress_hostage_archive(){
+	// TODO: add error checking
+	namespace io = boost::iostreams;
+	std::ifstream fileIn(baseDir + DATA_DIR + HOSTAGE_COMPRESSED, std::ios_base::in | std::ios_base::binary);
+	io::filtering_streambuf<io::input> in;
+	in.push(io::gzip_decompressor());
+	in.push(fileIn);
+	std::ofstream fileOut(baseDir + DATA_DIR + HOSTAGE_ARCHIVE, std::ios_base::out | std::ios_base::binary);
+	io::copy(in, fileOut);
+	in.pop();
+	fileOut.close();
+	return true;
 }
 
 bool AlarmFuck::on_window_delete(GdkEventAny* event)
