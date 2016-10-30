@@ -153,7 +153,7 @@ private:
 	Glib::RefPtr<Gtk::ListStore> timeUnitListStore;
 
 	// File paths
-	std::string dataDir;
+	std::string baseDir;
 	std::string fullHostageFilePath;
 
 	void on_in_at_combo_box_change();
@@ -169,6 +169,7 @@ private:
 	bool add_path_to_archive(TAR*,std::string);
 	bool check_time_entry();
 	bool perform_rtc_check();
+	bool write_compressed_hostage_archive();
 
 	void error_to_stdout(std::string);
 	void error_to_user(std::string, Glib::ustring);

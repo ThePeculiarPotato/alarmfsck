@@ -11,6 +11,7 @@ extern "C" {
 #include <fcntl.h>
 #include <unistd.h>
 #include <limits.h>
+#include <stdlib.h>
 #include <libgen.h>
 #include <sys/types.h>
 }
@@ -19,10 +20,12 @@ extern "C" {
 #include <boost/iostreams/filtering_streambuf.hpp>
 
 #define PADDING 10
-#define DATA_DIR "../data/"
+#define DATA_DIR "data/"
+#define BIN_DIR "bin/"
 #define HOSTAGE_FILE "hostages.af"
 #define HOSTAGE_ARCHIVE "hostages.tar"
 #define HOSTAGE_COMPRESSED "hostages.tar.gz"
+#define HIB_EXEC "hibernator"
 #define FILE_DELIM '/'
 #define SUGGESTED_HOURS 8
 
@@ -121,10 +124,20 @@ AlarmFuckLauncher::AlarmFuckLauncher() :
 	ssize_t exePathSize = readlink("/proc/self/exe", exePath, PATH_MAX);
 	if(exePathSize != -1){
 		exePath[exePathSize] = '\0';
-		dataDir = std::string(dirname(exePath)) + FILE_DELIM + DATA_DIR;
-	} else dataDir = DATA_DIR;
+		baseDir = std::string(dirname(exePath)) + "/../";
+		// resolve subdirectories and such
+		char *pathCand = realpath(baseDir.c_str(), NULL);
+		if(pathCand == NULL){
+			error_to_user("Could not canonicalize base path, using ../");
+			baseDir = "../";
+		} else {
+			baseDir = std::string(pathCand) + FILE_DELIM;
+			std::cout << baseDir << std::endl;
+		}
+	} else baseDir = "../";
 
-	fullHostageFilePath = dataDir + HOSTAGE_FILE;
+	fullHostageFilePath = baseDir + DATA_DIR + HOSTAGE_FILE;
+	std::cout << fullHostageFilePath << std::endl;
 	if(access(fullHostageFilePath.c_str(), F_OK) == 0){
 		std::cout << "Found hostage file " << HOSTAGE_FILE << std::endl;
 		if(pathHashList.import_file(fullHostageFilePath.c_str())){
@@ -246,7 +259,7 @@ bool AlarmFuckLauncher::write_hostage_archive(){
 	double currentSize = 0, totalSize = userPathHashList.get_size();
 	TAR *tarStrucPtr = new TAR;
 	// check for errors opening - the TAR_GNU option is necessary for files with long names
-	std::string fullHostageArchivePath = dataDir + HOSTAGE_ARCHIVE;
+	std::string fullHostageArchivePath = baseDir + DATA_DIR + HOSTAGE_ARCHIVE;
 	if( tar_open(&tarStrucPtr, fullHostageArchivePath.c_str(), NULL, O_WRONLY | O_CREAT | O_TRUNC, 0755, TAR_GNU) == -1){
 		error_to_user("Error opening " HOSTAGE_ARCHIVE);
 		return false;
@@ -378,15 +391,8 @@ void AlarmFuckLauncher::on_ok_button_click(){
 	// write everything to tar archive
 	if(!write_hostage_archive()) return;
 
-	namespace io = boost::iostreams;
-	std::ofstream fileOut(dataDir + HOSTAGE_COMPRESSED, std::ios_base::out | std::ios_base::binary);
-	io::filtering_streambuf<io::output> out;
-	out.push(io::gzip_compressor());
-	out.push(fileOut);
-	std::ifstream fileIn(dataDir + HOSTAGE_ARCHIVE, std::ios_base::in | std::ios_base::binary);
-	io::copy(fileIn, out);
-	out.pop();
-	fileIn.close();
+	if(!write_compressed_hostage_archive()) return;
+
 	// TODO: safely erase all the previously existing files
 	if(!perform_rtc_check()) return;
 
@@ -398,12 +404,26 @@ void AlarmFuckLauncher::on_ok_button_click(){
 		return;
 	}
 	
-	std::vector<std::string> args({"hibernator",std::to_string(timeWakeup.to_unix())});
+	std::vector<std::string> args({baseDir + BIN_DIR + HIB_EXEC,std::to_string(timeWakeup.to_unix())});
 	Glib::spawn_async("",args);
 
 	std::cout << "exiting" << std::endl;
 
 	hide();
+}
+
+bool AlarmFuckLauncher::write_compressed_hostage_archive(){
+	// TODO: add error checking
+	namespace io = boost::iostreams;
+	std::ofstream fileOut(baseDir + DATA_DIR + HOSTAGE_COMPRESSED, std::ios_base::out | std::ios_base::binary);
+	io::filtering_streambuf<io::output> out;
+	out.push(io::gzip_compressor());
+	out.push(fileOut);
+	std::ifstream fileIn(baseDir + DATA_DIR + HOSTAGE_ARCHIVE, std::ios_base::in | std::ios_base::binary);
+	io::copy(fileIn, out);
+	out.pop();
+	fileIn.close();
+	return true;
 }
 
 #define DEFAULT_RTC			"rtc0"
