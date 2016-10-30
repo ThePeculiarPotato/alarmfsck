@@ -1,7 +1,7 @@
 #ifndef GTKMM_EXAMPLEWORKER_H
 #define GTKMM_EXAMPLEWORKER_H
 
-#include <gtkmm.h>
+#include <glibmm/threads.h>
 
 class AlarmFuck;
 

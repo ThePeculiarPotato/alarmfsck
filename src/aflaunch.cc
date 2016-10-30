@@ -1,7 +1,9 @@
-#include "aflaunch.h"
+#include "alarmfuck.h"
 #include <gtkmm/application.h>
 #include <gtkmm/messagedialog.h>
-#include <glibmm.h>
+//#include <glibmm.h>
+#include <glibmm/regex.h>
+#include <glibmm/spawn.h>
 #include <iostream>
 #include <fstream>
 #include <string>
@@ -19,16 +21,6 @@ extern "C" {
 #include <boost/iostreams/copy.hpp>
 #include <boost/iostreams/filter/gzip.hpp>
 #include <boost/iostreams/filtering_streambuf.hpp>
-
-#define PADDING 10
-#define DATA_DIR "data/"
-#define BIN_DIR "bin/"
-#define HOSTAGE_FILE "hostages.af"
-#define HOSTAGE_ARCHIVE "hostages.tar"
-#define HOSTAGE_COMPRESSED "hostages.tar.gz"
-#define HIB_EXEC "hibernator"
-#define FILE_DELIM '/'
-#define SUGGESTED_HOURS 8
 
 AlarmFuckLauncher::AlarmFuckLauncher() :
 	okButton("Go"),

@@ -1,9 +1,9 @@
 #include "alarmfuck.h"
-#include "loopplayworker.h"
 #include <iostream>
 #include <canberra-gtk.h>
 #include <gtkmm/application.h>
 #include <glibmm/random.h>
+#include <glibmm/timer.h>
 extern "C" {
 #include <unistd.h>
 #include <limits.h>
@@ -11,7 +11,6 @@ extern "C" {
 #include <sys/types.h>
 }
 
-#define DATA_DIR "../data/"
 #define CONTEXT_ID 1
 
 AlarmFuck::AlarmFuck()
@@ -50,27 +49,41 @@ AlarmFuck::AlarmFuck()
 
 	show_all_children();
 
-	/* Currently the sound file is looked for in ../data relative to the
-	 * executable's path. Later it will search in appropriate
-	 * subdirectories of /usr/share and ~.
+	// TODO: put this in a function
+
+	/* Currently the data dir is ../data relative to the executable's path.
+	 * Later it will search in appropriate subdirectories of /usr/share and
+	 * ~.
 	 * The temporary ../data approach requires finding the executable path.
 	 * This is done non-portably through a system call and /proc/self/exe.
 	 * In case of error, the search is done relative to the current
 	 * directory. */
-	std::string audioPath("");
 	char exePath[PATH_MAX];
 	ssize_t exePathSize = readlink("/proc/self/exe", exePath, PATH_MAX);
 	if(exePathSize != -1){
 		exePath[exePathSize] = '\0';
-		audioPath += std::string(dirname(exePath)) + "/../data/rullGenocide.oga";
-		std::cout << audioPath << std::endl;
-	} else audioPath = "../data/rullGenocide.oga";
+		baseDir = std::string(dirname(exePath)) + "/../";
+		// resolve subdirectories and such
+		char *pathCand = realpath(baseDir.c_str(), NULL);
+		if(pathCand == NULL){
+			// TODO: implement error handling
+			std::cout << "Could not canonicalize base path, using ../" << std::endl;
+			baseDir = "../";
+		} else {
+			baseDir = std::string(pathCand) + FILE_DELIM;
+			std::cout << baseDir << std::endl;
+		}
+	} else baseDir = "../";
+
+	std::string audioPath = baseDir + DATA_DIR + AUDIO_FILE;
 
 	// Initializes the audio bits
 	ca_context_create(&context);
 	ca_context_set_driver(context, "alsa");
 	ca_proplist_create(&props);
 	ca_proplist_sets(props, CA_PROP_MEDIA_FILENAME, audioPath.c_str());
+
+	// TODO: encrypt the hostage archive
 
 	//start the horrible loop
 	workerThread =

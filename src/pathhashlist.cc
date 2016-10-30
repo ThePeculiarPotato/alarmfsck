@@ -1,4 +1,4 @@
-#include "aflaunch.h"
+#include "alarmfuck.h"
 #include <iostream>
 #include <fstream>
 #include <cstdlib>
