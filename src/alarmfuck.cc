@@ -151,8 +151,9 @@ void AlarmFuck::on_button_clicked()
 	}
 	if(hasHostages){
 		decompress_hostage_archive();
-		TAR *tarStrucPtr = new TAR;
+		// extract the archive
 		// check for errors opening - the TAR_GNU option is necessary for files with long names
+		TAR *tarStrucPtr = new TAR;
 		std::string fullHostageArchivePath = baseDir + DATA_DIR + HOSTAGE_ARCHIVE;
 		if( tar_open(&tarStrucPtr, fullHostageArchivePath.c_str(), NULL, O_RDONLY, 0755, TAR_GNU) == -1){
 			error_to_user("Error opening " HOSTAGE_ARCHIVE);
@@ -163,7 +164,19 @@ void AlarmFuck::on_button_clicked()
 			error_to_user("Error extracting archive");
 			return;
 		}
+		// erase the uncompressed archive
+		erase_file(fullHostageArchivePath);
 	}
+}
+
+bool AlarmFuck::erase_file(std::string str){
+	// TODO: write settings to a file and come up with a static function
+	// that takes a settings structure.
+	if(std::remove(str.c_str()) == -1){
+		error_to_user("Error removing " + str);
+		return false;
+	}
+	return true;
 }
 
 bool AlarmFuck::decompress_hostage_archive(){

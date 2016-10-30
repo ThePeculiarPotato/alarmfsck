@@ -45,6 +45,7 @@ protected:
 	bool hasHostages;
 	bool decompress_hostage_archive();
 	void error_to_user(std::string);
+	bool erase_file(std::string);
 
 	//Multithreading
 	Glib::Dispatcher dispatcher;
