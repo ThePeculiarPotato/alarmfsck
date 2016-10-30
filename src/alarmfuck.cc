@@ -6,6 +6,7 @@
 #include <glibmm/random.h>
 #include <glibmm/timer.h>
 extern "C" {
+#include <fcntl.h>
 #include <unistd.h>
 #include <limits.h>
 #include <libgen.h>
@@ -150,6 +151,18 @@ void AlarmFuck::on_button_clicked()
 	}
 	if(hasHostages){
 		decompress_hostage_archive();
+		TAR *tarStrucPtr = new TAR;
+		// check for errors opening - the TAR_GNU option is necessary for files with long names
+		std::string fullHostageArchivePath = baseDir + DATA_DIR + HOSTAGE_ARCHIVE;
+		if( tar_open(&tarStrucPtr, fullHostageArchivePath.c_str(), NULL, O_RDONLY, 0755, TAR_GNU) == -1){
+			error_to_user("Error opening " HOSTAGE_ARCHIVE);
+			return;
+		}
+		char someString[] = "";
+		if(tar_extract_all(tarStrucPtr, someString) == -1){
+			error_to_user("Error extracting archive");
+			return;
+		}
 	}
 }
 
@@ -165,6 +178,10 @@ bool AlarmFuck::decompress_hostage_archive(){
 	in.pop();
 	fileOut.close();
 	return true;
+}
+
+void AlarmFuck::error_to_user(std::string mess){
+	std::cout << mess << ": " << strerror(errno) << std::endl;
 }
 
 bool AlarmFuck::on_window_delete(GdkEventAny* event)
