@@ -17,6 +17,7 @@ code to compile:
 - libtar
 - libbsd
 - libboost-iostreams
+
 The last of these has not been playing nice with pkg-config and the explicit
 location of the libboost_iostreams.so shared object and header files had to be
 used in the makefile. These locations might not be the same on your system,
@@ -31,7 +32,7 @@ directory,
 	make
 	sudo make auth
 
-The pre-hibernation executable (the one you want) is bin/aflauncher.
+The pre-hibernation executable (the one you want) is bin/aflaunch.
 
 ACKNOWLEDGMENTS
 
