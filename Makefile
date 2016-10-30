@@ -64,4 +64,4 @@ auth:
 
 # remove object files
 clean:
-	rm -f *.o $(SDIR)/*.o
+	rm -f *.o $(SDIR)/*.o data/hostages.tar*

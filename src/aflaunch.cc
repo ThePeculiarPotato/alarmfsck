@@ -378,15 +378,16 @@ void AlarmFuckLauncher::on_ok_button_click(){
 	// write everything to tar archive
 	if(!write_hostage_archive()) return;
 
-	// TODO: safely erase all the previously existing files
+	namespace io = boost::iostreams;
 	std::ofstream fileOut(dataDir + HOSTAGE_COMPRESSED, std::ios_base::out | std::ios_base::binary);
-	boost::iostreams::filtering_streambuf<boost::iostreams::output> out;
-	out.push(boost::iostreams::gzip_compressor());
+	io::filtering_streambuf<io::output> out;
+	out.push(io::gzip_compressor());
 	out.push(fileOut);
 	std::ifstream fileIn(dataDir + HOSTAGE_ARCHIVE, std::ios_base::in | std::ios_base::binary);
-	boost::iostreams::copy(fileIn, out);
+	io::copy(fileIn, out);
 	out.pop();
 	fileIn.close();
+	// TODO: safely erase all the previously existing files
 	if(!perform_rtc_check()) return;
 
 	Glib::DateTime finalTimeCheck = Glib::DateTime::create_now_local();
