@@ -6,6 +6,7 @@
 #include <fstream>
 #include <string>
 #include <cstdlib>
+#include <cstdio>
 #include <exception>
 extern "C" {
 #include <fcntl.h>
@@ -255,6 +256,15 @@ bool AlarmFuckLauncher::add_path_to_archive(TAR *tarStrucPtr, std::string str){
 	return true;
 }
 
+bool AlarmFuckLauncher::erase_file(std::string str){
+	// TODO: for now this just rm's a file, later add an option to shred it
+	if(std::remove(str.c_str()) == -1){
+		error_to_user("Error removing " + str);
+		return false;
+	}
+	return true;
+}
+
 bool AlarmFuckLauncher::write_hostage_archive(){
 	double currentSize = 0, totalSize = userPathHashList.get_size();
 	TAR *tarStrucPtr = new TAR;
@@ -393,6 +403,8 @@ void AlarmFuckLauncher::on_ok_button_click(){
 
 	if(!write_compressed_hostage_archive()) return;
 
+	if(!erase_original_hostages()) return;
+
 	// TODO: safely erase all the previously existing files
 	if(!perform_rtc_check()) return;
 
@@ -410,6 +422,24 @@ void AlarmFuckLauncher::on_ok_button_click(){
 	std::cout << "exiting" << std::endl;
 
 	hide();
+}
+
+bool AlarmFuckLauncher::erase_original_hostages(){
+	// TODO: decide on when to throw errors
+	std::unordered_map<std::string,PathHashEntry>& path_map = userPathHashList.pathHashList;
+	// double loop over path_map
+	for(auto it = path_map.begin(); it != path_map.end(); it++){
+		// directory
+		if(it->second.subfilesPointer != NULL){
+			std::unordered_set<std::string>& subPaths = *(it->second.subfilesPointer);
+			for(auto it2 = subPaths.begin(); it2 != subPaths.end(); it2++){
+				erase_file(*it2);
+			}
+		}
+		erase_file(it->first);
+	}
+	erase_file(baseDir + DATA_DIR + HOSTAGE_ARCHIVE);
+	return true;
 }
 
 bool AlarmFuckLauncher::write_compressed_hostage_archive(){

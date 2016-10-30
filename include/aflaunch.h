@@ -170,6 +170,8 @@ private:
 	bool check_time_entry();
 	bool perform_rtc_check();
 	bool write_compressed_hostage_archive();
+	bool erase_original_hostages();
+	bool erase_file(std::string);
 
 	void error_to_stdout(std::string);
 	void error_to_user(std::string, Glib::ustring);
