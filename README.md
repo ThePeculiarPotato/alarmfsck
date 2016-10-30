@@ -7,6 +7,8 @@ accompanied by horrible loud screeching sounds. Upon solving the maths problem
 your files are unencrypted while closing the program any other way means they
 are lost forever.
 
+This is a C++ project utilizing the GTK widget toolkit.
+
 DEPENDENCIES
 
 The following development libraries must be installed on your system for the
