@@ -152,6 +152,9 @@ private:
 	Glib::RefPtr<Gtk::ListStore> inAtListStore;
 	Glib::RefPtr<Gtk::ListStore> timeUnitListStore;
 
+	// File paths
+	std::string dataDir;
+	std::string fullHostageFilePath;
 
 	void on_in_at_combo_box_change();
 	void on_hostage_check_box_click();

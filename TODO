@@ -1,3 +1,4 @@
+- branch and store hostages.(tar/af) to data
 - check out the weird compression behaviour
 - implement the actual removal of files
 - allow for a 'debug' switch that doesn't delete the original files - libreadline?

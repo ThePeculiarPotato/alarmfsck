@@ -9,12 +9,17 @@
 #include <exception>
 extern "C" {
 #include <fcntl.h>
+#include <unistd.h>
+#include <limits.h>
+#include <libgen.h>
+#include <sys/types.h>
 }
 #include <boost/iostreams/copy.hpp>
 #include <boost/iostreams/filter/zlib.hpp>
 #include <boost/iostreams/filtering_streambuf.hpp>
 
 #define PADDING 10
+#define DATA_DIR "../data/"
 #define HOSTAGE_FILE "hostages.af"
 #define HOSTAGE_ARCHIVE "hostages.tar"
 #define HOSTAGE_COMPRESSED "hostages.tar.z"
@@ -105,9 +110,24 @@ AlarmFuckLauncher::AlarmFuckLauncher() :
 	show_all_children();
 	progressBar.hide();
 
-	if(access(HOSTAGE_FILE, F_OK) == 0){
+	/* Currently the data dir is ../data relative to the executable's path.
+	 * Later it will search in appropriate subdirectories of /usr/share and
+	 * ~.
+	 * The temporary ../data approach requires finding the executable path.
+	 * This is done non-portably through a system call and /proc/self/exe.
+	 * In case of error, the search is done relative to the current
+	 * directory. */
+	char exePath[PATH_MAX];
+	ssize_t exePathSize = readlink("/proc/self/exe", exePath, PATH_MAX);
+	if(exePathSize != -1){
+		exePath[exePathSize] = '\0';
+		dataDir = std::string(dirname(exePath)) + FILE_DELIM + DATA_DIR;
+	} else dataDir = DATA_DIR;
+
+	fullHostageFilePath = dataDir + FILE_DELIM + HOSTAGE_FILE;
+	if(access(fullHostageFilePath.c_str(), F_OK) == 0){
 		std::cout << "Found hostage file " << HOSTAGE_FILE << std::endl;
-		if(pathHashList.import_file(HOSTAGE_FILE)){
+		if(pathHashList.import_file(fullHostageFilePath.c_str())){
 			update_user_hash_list();
 			hostageCheckBox.set_active();
 			hostageCheckBox.toggled();
@@ -196,7 +216,7 @@ void AlarmFuckLauncher::error_to_user(std::string preString){
 
 bool AlarmFuckLauncher::write_hostage_list_file(){
 	progressBar.set_text("Writing hostage list to disk.");
-	std::ofstream ofs(HOSTAGE_FILE);
+	std::ofstream ofs(fullHostageFilePath);
 	// check for errors
 	if(!ofs){
 		error_to_user("Could not open " HOSTAGE_FILE);
@@ -226,7 +246,8 @@ bool AlarmFuckLauncher::write_hostage_archive(){
 	double currentSize = 0, totalSize = userPathHashList.get_size();
 	TAR *tarStrucPtr = new TAR;
 	// check for errors opening - the TAR_GNU option is necessary for files with long names
-	if( tar_open(&tarStrucPtr, HOSTAGE_ARCHIVE, NULL, O_WRONLY | O_CREAT | O_TRUNC, 0755, TAR_GNU) == -1){
+	std::string fullHostageArchivePath = dataDir + FILE_DELIM + HOSTAGE_ARCHIVE;
+	if( tar_open(&tarStrucPtr, fullHostageArchivePath.c_str(), NULL, O_WRONLY | O_CREAT | O_TRUNC, 0755, TAR_GNU) == -1){
 		error_to_user("Error opening " HOSTAGE_ARCHIVE);
 		return false;
 	}
@@ -341,9 +362,9 @@ void AlarmFuckLauncher::on_ok_button_click(){
 	if(dialog.run() != Gtk::RESPONSE_OK) return;
 	
 	// Write hostage file, don't update it if it wasn't modified after importing it
-	if(!updatedFileList && access(HOSTAGE_FILE, F_OK) == 0){
+	if(!updatedFileList && access(fullHostageFilePath.c_str(), F_OK) == 0){
 		struct stat * statBuf = new struct stat;
-		if(stat(HOSTAGE_FILE, statBuf) != 0){
+		if(stat(fullHostageFilePath.c_str(), statBuf) != 0){
 			error_to_user("Could not open " HOSTAGE_FILE);
 			return;
 		}
