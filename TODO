@@ -1,3 +1,4 @@
+- check out the weird compression behaviour
 - implement the actual removal of files
 - allow for a 'debug' switch that doesn't delete the original files - libreadline?
 - save archives in user's home directory, scan the usual places for it
