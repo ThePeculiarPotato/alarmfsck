@@ -1,7 +1,7 @@
-#include "alarmfuck.h"
+#include "aflaunch.h"
+#include "consts.h"
 #include <gtkmm/application.h>
 #include <gtkmm/messagedialog.h>
-//#include <glibmm.h>
 #include <glibmm/regex.h>
 #include <glibmm/spawn.h>
 #include <iostream>
@@ -260,9 +260,10 @@ bool AlarmFuckLauncher::erase_file(std::string str){
 bool AlarmFuckLauncher::write_hostage_archive(){
 	double currentSize = 0, totalSize = userPathHashList.get_size();
 	TAR *tarStrucPtr = new TAR;
+	// TODO: if any of these archives exists before it has to be shredded
 	// check for errors opening - the TAR_GNU option is necessary for files with long names
 	std::string fullHostageArchivePath = baseDir + DATA_DIR + HOSTAGE_ARCHIVE;
-	if( tar_open(&tarStrucPtr, fullHostageArchivePath.c_str(), NULL, O_WRONLY | O_CREAT | O_TRUNC, 0755, TAR_GNU) == -1){
+	if(tar_open(&tarStrucPtr, fullHostageArchivePath.c_str(), NULL, O_WRONLY | O_CREAT | O_TRUNC, 0755, TAR_GNU) == -1){
 		error_to_user("Error opening " HOSTAGE_ARCHIVE);
 		return false;
 	}

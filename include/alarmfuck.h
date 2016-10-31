@@ -1,23 +1,14 @@
 #ifndef ORG_WALRUS_ALARMFUCK_ALARMFUCK_H
 #define ORG_WALRUS_ALARMFUCK_ALARMFUCK_H
 
+#include "loopplayworker.h"
 #include <gtkmm/button.h>
 #include <gtkmm/window.h>
+#include <gtkmm/box.h>
+#include <gtkmm/label.h>
+#include <gtkmm/entry.h>
 #include <glibmm/dispatcher.h>
 #include <canberra-gtk.h>
-#include "loopplayworker.h"
-#include "aflaunch.h"
-
-#define PADDING 10
-#define DATA_DIR "data/"
-#define BIN_DIR "bin/"
-#define HOSTAGE_FILE "hostages.af"
-#define HOSTAGE_ARCHIVE "hostages.tar"
-#define HOSTAGE_COMPRESSED "hostages.tar.gz"
-#define HIB_EXEC "hibernator"
-#define AUDIO_FILE "rullGenocide.oga"
-#define FILE_DELIM '/'
-#define SUGGESTED_HOURS 8
 
 class AlarmFuck : public Gtk::Window
 {

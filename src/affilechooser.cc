@@ -72,7 +72,7 @@ void AlarmFuckFileChooser::set_hash_list(PathHashList& phl){
 	pathHashList = &phl;
 }
 
-void AlarmFuckFileChooser::on_add_button_clicked(std::string typeStr)
+void AlarmFuckFileChooser::on_add_button_clicked(const std::string& typeStr)
 {
 	Gtk::FileChooserAction fcAction = (typeStr == "File") ? Gtk::FILE_CHOOSER_ACTION_OPEN : Gtk::FILE_CHOOSER_ACTION_SELECT_FOLDER;
 	Gtk::FileChooserDialog dialog("Choose " + typeStr + "s to Add", fcAction);

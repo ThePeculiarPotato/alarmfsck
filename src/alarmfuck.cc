@@ -1,4 +1,5 @@
 #include "alarmfuck.h"
+#include "consts.h"
 #include <iostream>
 #include <fstream>
 #include <canberra-gtk.h>
@@ -9,6 +10,7 @@ extern "C" {
 #include <fcntl.h>
 #include <unistd.h>
 #include <limits.h>
+#include <libtar.h>
 #include <libgen.h>
 #include <sys/types.h>
 }

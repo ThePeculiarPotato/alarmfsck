@@ -34,9 +34,9 @@ class AlarmFuckFileChooser : public Gtk::Window
 
 private:
 	// Signal handlers
-	void on_add_button_clicked(std::string);
+	void on_add_button_clicked(const std::string&);
 	void on_remove_button_clicked();
-	void on_cancel_button_clicked(){hide();}
+	inline void on_cancel_button_clicked(){hide();}
 	void on_import_button_clicked();
 	void on_done_button_clicked();
 

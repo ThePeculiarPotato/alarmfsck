@@ -19,8 +19,8 @@ LEXEC = $(BINDIR)/aflaunch
 HEXEC = $(BINDIR)/hibernator
 
 # headers upon which top-level programs depend
-RDEPS = alarmfuck.h loopplayworker.h
-LDEPS = aflaunch.h
+RDEPS = alarmfuck.h loopplayworker.h consts.h
+LDEPS = aflaunch.h consts.h
 
 # object files comprising the top-level programs
 RINGEROBJ = alarmfuck.o

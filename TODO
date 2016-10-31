@@ -1,4 +1,5 @@
-- decompress files and put them back
+- figure out why the affilechooser uses a PathHashList _pointer_, change to a
+  smart pointer
 - encrypt them files
 - allow for a 'debug' switch that doesn't delete the original files - libreadline?
 - save archives in user's home directory, scan the usual places for it
