@@ -12,4 +12,7 @@
 #define FILE_DELIM '/'
 #define SUGGESTED_HOURS 8
 
+std::string get_executable_dir();
+std::string cpp_realpath(const std::string&);
+
 #endif // ORG_WALRUS_ALARMFUCK_CONSTS

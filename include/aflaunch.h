@@ -65,10 +65,10 @@ private:
 	PathHashList* pathHashList;
 
 public:
-	AlarmFuckFileChooser(AlarmFuckLauncher& parent);
-	void notify(std::string);
-	Gtk::TreeModel::iterator insert_entry(Glib::ustring, off_t, std::string);
-	void erase(Gtk::TreeIter);
+	explicit AlarmFuckFileChooser(AlarmFuckLauncher& parent);
+	void notify(const std::string&);
+	Gtk::TreeModel::iterator insert_entry(const Glib::ustring&, off_t, const std::string&);
+	void erase(Gtk::TreeIter&);
 	void set_hash_list(PathHashList& phl);
 };
 
@@ -164,14 +164,15 @@ private:
 	void populate_in_at_combo_box();
 	void populate_time_unit_combo_box();
 
+	void check_hostage_file();
 	bool write_hostage_list_file();
 	bool write_hostage_archive();
-	bool add_path_to_archive(TAR*,std::string);
+	bool add_path_to_archive(TAR*,const std::string&);
 	bool check_time_entry();
 	bool perform_rtc_check();
 	bool write_compressed_hostage_archive();
 	bool erase_original_hostages();
-	bool erase_file(std::string);
+	bool erase_file(const std::string&);
 
 	void error_to_stdout(std::string);
 	void error_to_user(std::string, Glib::ustring);

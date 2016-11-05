@@ -1,3 +1,4 @@
+- implement errno-inspired but exception-throwing error handling
 - figure out why the affilechooser uses a PathHashList _pointer_, change to a
   smart pointer
 - encrypt them files

@@ -85,7 +85,7 @@ void AlarmFuckFileChooser::on_add_button_clicked(const std::string& typeStr)
 	pathHashList->populate_path_hash_view(dialog.get_filenames());
 }
 
-void AlarmFuckFileChooser::erase(Gtk::TreeIter blob){
+void AlarmFuckFileChooser::erase(Gtk::TreeIter& blob){
 	fileViewListStore->erase(blob);
 }
 
@@ -120,12 +120,12 @@ void AlarmFuckFileChooser::on_done_button_clicked()
 	hide();
 }
 
-void AlarmFuckFileChooser::notify(std::string message){
+void AlarmFuckFileChooser::notify(const std::string& message){
 	infoScroll.show();
 	infoTextBuffer->insert(infoTextBuffer->end(), message);
 }
 
-Gtk::TreeModel::iterator AlarmFuckFileChooser::insert_entry(Glib::ustring type, off_t size, std::string name){
+Gtk::TreeModel::iterator AlarmFuckFileChooser::insert_entry(const Glib::ustring& type, off_t size, const std::string& name){
 	Gtk::TreeModel::iterator row = fileViewListStore->append();
 	(*row)[fileViewColumnRecord.typeCol] = type;
 	(*row)[fileViewColumnRecord.nameCol] = name;

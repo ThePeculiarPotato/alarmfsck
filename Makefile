@@ -2,7 +2,7 @@
 IDIR=include
 BINDIR=bin
 SDIR=src
-CC=g++ -g -Wno-deprecated-declarations
+CXX=g++ -g -Wno-deprecated-declarations
 COMPILE_DEPS=gtkmm-3.0 libcanberra libcanberra-gtk3
 CFLAGS=-I$(IDIR) `pkg-config --cflags $(COMPILE_DEPS)`
 LIBS= `pkg-config --libs $(COMPILE_DEPS)`
@@ -37,7 +37,7 @@ move: $(REXEC) $(LEXEC) $(HEXEC)
 
 # object compilation rule
 %.o: %.cc
-	$(CC) -c -o $@ $< $(CFLAGS)
+	$(CXX) -c -o $@ $< $(CFLAGS)
 
 # recompile objects if relevant headers change
 $(RINGEROBJ): $(RDEPS)
@@ -45,13 +45,13 @@ $(LAUNCHEROBJ): $(LDEPS)
 
 # top-level executables' compilation rules
 $(REXEC): $(RINGEROBJ)
-	$(CC) -o $@ $^ $(CFLAGS) $(LIBS) $(UGLY_SUPPLEMENT_STRING)
+	$(CXX) -o $@ $^ $(CFLAGS) $(LIBS) $(UGLY_SUPPLEMENT_STRING)
 
 $(LEXEC): $(LAUNCHEROBJ)
-	$(CC) -o $@ $^ $(CFLAGS) $(LIBS) $(UGLY_SUPPLEMENT_STRING) -lbsd
+	$(CXX) -o $@ $^ $(CFLAGS) $(LIBS) $(UGLY_SUPPLEMENT_STRING) -lbsd
 
 $(HEXEC): hibernator.o
-	$(CC) -o $@ $^
+	$(CXX) -o $@ $^
 
 # unclutter the base directory and move object files to src/
 move:
