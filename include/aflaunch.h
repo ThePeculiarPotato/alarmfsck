@@ -16,12 +16,12 @@
 #include <glibmm/datetime.h>
 #include <unordered_set>
 #include <unordered_map>
+#include <system_error>
 extern "C" {
 #include <sys/types.h>
 #include <sys/stat.h>
 #include <unistd.h>
 #include <libtar.h>
-#include <errno.h>
 #include <ftw.h>
 #include <bsd/stdlib.h>
 }
@@ -174,9 +174,9 @@ private:
 	bool erase_original_hostages();
 	bool erase_file(const std::string&);
 
-	void error_to_stdout(std::string);
-	void error_to_user(std::string, Glib::ustring);
-	void error_to_user(std::string);
+	void error_to_user(const Glib::ustring&, const std::string&, const bool =true);
+	void error_to_user(const Glib::ustring&, const std::system_error&, const bool =true);
+	void error_to_user(const Glib::ustring&, const bool =true);
 public:
 	AlarmFuckLauncher();
 	void update_user_hash_list(){userPathHashList = pathHashList;};

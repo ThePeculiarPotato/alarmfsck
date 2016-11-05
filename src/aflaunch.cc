@@ -10,6 +10,7 @@
 #include <cstdlib>
 #include <cstdio>
 #include <exception>
+#include <cerrno>
 extern "C" {
 #include <fcntl.h>
 #include <unistd.h>
@@ -42,7 +43,7 @@ AlarmFuckLauncher::AlarmFuckLauncher() :
     fileChooserWindow.set_hash_list(pathHashList);
 
     // window setup
-    set_border_width(PADDING);
+    set_border_width(padding);
     set_title("alarmfuck Launcher");
     set_default_size(380, 150);
 
@@ -65,7 +66,7 @@ AlarmFuckLauncher::AlarmFuckLauncher() :
 
     progressBar.set_show_text(true);
 
-    timeIntervalEntry.set_text(std::to_string(SUGGESTED_HOURS));
+    timeIntervalEntry.set_text(std::to_string(suggested_hours));
     timeIntervalEntry.set_alignment(1);
     timeIntervalEntry.set_width_chars(4);
 
@@ -73,7 +74,7 @@ AlarmFuckLauncher::AlarmFuckLauncher() :
     inHBox.pack_start(timeUnitComboBox, Gtk::PACK_EXPAND_WIDGET);
 
     timeStart = Glib::DateTime::create_now_local();
-    timeWakeup = timeStart.add_hours(SUGGESTED_HOURS);
+    timeWakeup = timeStart.add_hours(suggested_hours);
     timeEntry.set_text(timeWakeup.format("%T"));
     timeEntry.set_alignment(.5);
     timeEntry.set_width_chars(8);
@@ -118,23 +119,23 @@ AlarmFuckLauncher::AlarmFuckLauncher() :
      * directory. */
     std::string execDir;
     try{execDir = get_executable_dir();}
-    catch(std::exception){
+    catch(std::system_error& error){
 	error_to_user("Cannot determine executable path, using current dir");
 	execDir = "";
     }
     try{baseDir = cpp_realpath(execDir + "../");}
-    catch(std::exception){
+    catch(std::system_error& error){
 	error_to_user("Cannot canonicalize path, using ../");
 	baseDir  = "../";
     }
-    fullHostageFilePath = baseDir + DATA_DIR + HOSTAGE_FILE;
+    fullHostageFilePath = baseDir + data_dir + hostage_file;
     check_hostage_file();
 }
 
 void AlarmFuckLauncher::check_hostage_file(){
     std::cout << fullHostageFilePath << std::endl;
     if(access(fullHostageFilePath.c_str(), F_OK) == 0){
-	std::cout << "Found hostage file " << HOSTAGE_FILE << std::endl;
+	std::cout << "Found hostage file " << hostage_file << std::endl;
 	if(pathHashList.import_file(fullHostageFilePath.c_str())){
 	    update_user_hash_list();
 	    hostageCheckBox.set_active();
@@ -148,13 +149,13 @@ std::string get_executable_dir(){
     ssize_t exePathSize = readlink("/proc/self/exe", exePath, PATH_MAX);
     if(exePathSize == -1) throw std::exception();
     exePath[exePathSize] = '\0';
-    return std::string(dirname(exePath)) + FILE_DELIM;
+    return std::string(dirname(exePath)) + file_delim;
 }
 
 std::string cpp_realpath(const std::string& raw_path){
     char *pathCand = realpath(raw_path.c_str(), NULL);
     if(pathCand == NULL) throw std::exception();
-    return std::string(pathCand) + FILE_DELIM;
+    return std::string(pathCand) + file_delim;
 }
 
 void AlarmFuckLauncher::populate_in_at_combo_box()
@@ -221,29 +222,34 @@ void AlarmFuckLauncher::check_good_to_go(){
     else progressBar.hide();
 }
 
-void AlarmFuckLauncher::error_to_stdout(std::string preString){
-    std::cout << preString << ": " << strerror(errno) << std::endl;
+// A bunch of error-message functions
+void AlarmFuckLauncher::error_to_user(const Glib::ustring& appErrMessage, const std::string& sysErrMessage, const bool punctuation){
+    // appErrMessage should end with no punctuation for pretty formatting.
+    // sysErrMessage is supposed to come from errno or a similar error mechanism
+    std::cout << appErrMessage << (punctuation ? ": " : "") << sysErrMessage << std::endl;
+    progressBar.set_text(appErrMessage + (punctuation ? "." : ""));
 }
 
-void AlarmFuckLauncher::error_to_user(std::string stdoutPreString, Glib::ustring progBarString){
-    error_to_stdout(stdoutPreString);
-    progressBar.set_text(progBarString);
+void AlarmFuckLauncher::error_to_user(const Glib::ustring& appErrMessage, const std::system_error& error, const bool punctuation){
+    error_to_user(appErrMessage, error.what(), punctuation);
 }
 
-void AlarmFuckLauncher::error_to_user(std::string preString){
-    error_to_user(preString, preString + ".");
+void AlarmFuckLauncher::error_to_user(const Glib::ustring& appErrMessage, const bool hasSysErr){
+    if(hasSysErr)
+	error_to_user(appErrMessage, std::system_category().default_error_condition(errno).message(), true);
+    else
+	error_to_user(appErrMessage, "", false);
 }
-
 
 bool AlarmFuckLauncher::write_hostage_list_file(){
     progressBar.set_text("Writing hostage list to disk.");
     std::ofstream ofs(fullHostageFilePath);
     if(!ofs){
-	error_to_user("Could not open " HOSTAGE_FILE);
+	error_to_user("Could not open " + hostage_file);
 	return false;
     }
     // reference with shorter name
-    std::unordered_map<std::string,PathHashEntry>& path_map = userPathHashList.pathHashList;
+    auto& path_map = userPathHashList.pathHashList;
     // loop over path_map and write out top paths
     for(auto it = path_map.begin(); it != path_map.end(); it++){
 	ofs << it->first << std::endl;
@@ -277,9 +283,9 @@ bool AlarmFuckLauncher::write_hostage_archive(){
     TAR *tarStrucPtr = new TAR;
     // TODO: if any of these archives exists before it has to be shredded
     // open - the TAR_GNU option is necessary for files with long names
-    std::string fullHostageArchivePath = baseDir + DATA_DIR + HOSTAGE_ARCHIVE;
+    std::string fullHostageArchivePath = baseDir + data_dir + hostage_archive;
     if(tar_open(&tarStrucPtr, fullHostageArchivePath.c_str(), NULL, O_WRONLY | O_CREAT | O_TRUNC, 0755, TAR_GNU) == -1){
-	error_to_user("Error opening " HOSTAGE_ARCHIVE);
+	error_to_user("Error opening " + hostage_archive);
 	return false;
     }
     // TODO: extract the below loop into general expression, possibly taking a lambda
@@ -304,7 +310,7 @@ bool AlarmFuckLauncher::write_hostage_archive(){
     }
     // finalize archive
     if(tar_append_eof(tarStrucPtr) == -1){
-	error_to_user("Error finalizing " HOSTAGE_ARCHIVE);
+	error_to_user("Error finalizing " + hostage_archive);
 	progressBar.set_fraction(0.0);
 	tar_close(tarStrucPtr);
 	return false;
@@ -400,7 +406,7 @@ void AlarmFuckLauncher::on_ok_button_click(){
     if(!updatedFileList && access(fullHostageFilePath.c_str(), F_OK) == 0){
 	struct stat * statBuf = new struct stat;
 	if(stat(fullHostageFilePath.c_str(), statBuf) != 0){
-	    error_to_user("Could not open " HOSTAGE_FILE);
+	    error_to_user("Could not open " + hostage_file);
 	    return;
 	}
 	if(statBuf->st_mtime > timeStart.to_unix()){
@@ -424,7 +430,7 @@ void AlarmFuckLauncher::on_ok_button_click(){
     }
 
     // run hibernator and exit
-    std::vector<std::string> args({baseDir + BIN_DIR + HIB_EXEC,std::to_string(timeWakeup.to_unix())});
+    std::vector<std::string> args({baseDir + bin_dir + hib_exec,std::to_string(timeWakeup.to_unix())});
     Glib::spawn_async("",args);
     std::cout << "exiting" << std::endl;
     hide();
@@ -445,18 +451,18 @@ bool AlarmFuckLauncher::erase_original_hostages(){
 	}
 	erase_file(it->first);
     }
-    erase_file(baseDir + DATA_DIR + HOSTAGE_ARCHIVE);
+    erase_file(baseDir + data_dir + hostage_archive);
     return true;
 }
 
 bool AlarmFuckLauncher::write_compressed_hostage_archive(){
     // TODO: add error checking
     namespace io = boost::iostreams;
-    std::ofstream fileOut(baseDir + DATA_DIR + HOSTAGE_COMPRESSED, std::ios_base::out | std::ios_base::binary);
+    std::ofstream fileOut(baseDir + data_dir + hostage_compressed, std::ios_base::out | std::ios_base::binary);
     io::filtering_streambuf<io::output> out;
     out.push(io::gzip_compressor());
     out.push(fileOut);
-    std::ifstream fileIn(baseDir + DATA_DIR + HOSTAGE_ARCHIVE, std::ios_base::in | std::ios_base::binary);
+    std::ifstream fileIn(baseDir + data_dir + hostage_archive, std::ios_base::in | std::ios_base::binary);
     io::copy(fileIn, out);
     out.pop();
     fileIn.close();

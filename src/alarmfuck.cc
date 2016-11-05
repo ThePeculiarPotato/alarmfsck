@@ -77,13 +77,13 @@ AlarmFuck::AlarmFuck()
 			std::cout << "Could not canonicalize base path, using ../" << std::endl;
 			baseDir = "../";
 		} else {
-			baseDir = std::string(pathCand) + FILE_DELIM;
+			baseDir = std::string(pathCand) + file_delim;
 			// DEBUG
 			std::cout << baseDir << std::endl;
 		}
 	} else baseDir = "../";
 
-	std::string audioPath = baseDir + DATA_DIR + AUDIO_FILE;
+	std::string audioPath = baseDir + data_dir + audio_file;
 
 	// Initializes the audio bits
 	ca_context_create(&context);
@@ -92,7 +92,7 @@ AlarmFuck::AlarmFuck()
 	ca_proplist_sets(props, CA_PROP_MEDIA_FILENAME, audioPath.c_str());
 
 	// TODO: encrypt the hostage archive
-	hasHostages = (access(std::string(baseDir + DATA_DIR + HOSTAGE_COMPRESSED).c_str(), F_OK) == 0);
+	hasHostages = (access(std::string(baseDir + data_dir + hostage_compressed).c_str(), F_OK) == 0);
 	// DEBUG
 	std::cout << hasHostages << std::endl;
 
@@ -156,9 +156,9 @@ void AlarmFuck::on_button_clicked()
 		// extract the archive
 		// check for errors opening - the TAR_GNU option is necessary for files with long names
 		TAR *tarStrucPtr = new TAR;
-		std::string fullHostageArchivePath = baseDir + DATA_DIR + HOSTAGE_ARCHIVE;
+		std::string fullHostageArchivePath = baseDir + data_dir + hostage_archive;
 		if( tar_open(&tarStrucPtr, fullHostageArchivePath.c_str(), NULL, O_RDONLY, 0755, TAR_GNU) == -1){
-			error_to_user("Error opening " HOSTAGE_ARCHIVE);
+			error_to_user("Error opening " + hostage_archive);
 			return;
 		}
 		char someString[] = "";
@@ -184,11 +184,11 @@ bool AlarmFuck::erase_file(std::string str){
 bool AlarmFuck::decompress_hostage_archive(){
 	// TODO: add error checking
 	namespace io = boost::iostreams;
-	std::ifstream fileIn(baseDir + DATA_DIR + HOSTAGE_COMPRESSED, std::ios_base::in | std::ios_base::binary);
+	std::ifstream fileIn(baseDir + data_dir + hostage_compressed, std::ios_base::in | std::ios_base::binary);
 	io::filtering_streambuf<io::input> in;
 	in.push(io::gzip_decompressor());
 	in.push(fileIn);
-	std::ofstream fileOut(baseDir + DATA_DIR + HOSTAGE_ARCHIVE, std::ios_base::out | std::ios_base::binary);
+	std::ofstream fileOut(baseDir + data_dir + hostage_archive, std::ios_base::out | std::ios_base::binary);
 	io::copy(in, fileOut);
 	in.pop();
 	fileOut.close();
