@@ -1,6 +1,8 @@
 #ifndef ORG_WALRUS_ALARMFUCK_AFLAUNCH_H
 #define ORG_WALRUS_ALARMFUCK_AFLAUNCH_H
 
+#include "pathhashlist.h"
+#include "affilechooser.h"
 #include <gtkmm/button.h>
 #include <gtkmm/window.h>
 #include <gtkmm/checkbutton.h>
@@ -10,129 +12,13 @@
 #include <gtkmm/combobox.h>
 #include <gtkmm/entry.h>
 #include <gtkmm/liststore.h>
-#include <gtkmm/scrolledwindow.h>
-#include <gtkmm/textview.h>
 #include <gtkmm/progressbar.h>
 #include <glibmm/datetime.h>
-#include <unordered_set>
-#include <unordered_map>
-#include <system_error>
-#include <cerrno>
 extern "C" {
-#include <sys/types.h>
-#include <sys/stat.h>
-#include <unistd.h>
 #include <libtar.h>
-#include <ftw.h>
-#include <bsd/stdlib.h>
 }
 
-class AlarmFuckException : public std::system_error
-{
-private:
-    const std::string message;
-public:
-    AlarmFuckException(std::string message, int code): std::system_error(code,
-	    std::system_category()), message(message) {};
-    AlarmFuckException(std::string message): AlarmFuckException(message, errno) {};
-    const std::string& get_message() const {return message;};
-};
-
-class AlarmFuckLauncher;
-class PathHashList;
-
-class AlarmFuckFileChooser : public Gtk::Window
-{
-
-private:
-	// Signal handlers
-	void on_add_button_clicked(const std::string&);
-	void on_remove_button_clicked();
-	inline void on_cancel_button_clicked(){hide();}
-	void on_import_button_clicked();
-	void on_done_button_clicked();
-
-	// General widgets:
-	Gtk::Button addFilesButton, addFolderButton, removeButton, importButton, doneButton, cancelButton;
-	Gtk::Label wakeMeUpLabel, onLabel, takeHostagesLabel;
-	Gtk::Box vBox;
-	Gtk::ButtonBox bottomButtonHBox;
-	Gtk::TreeView fileView;
-	Gtk::ScrolledWindow fileScroll, infoScroll;
-	Gtk::TextView infoTextView;
-	Glib::RefPtr<Gtk::TextBuffer> infoTextBuffer;
-
-	class ModelColumns : public Gtk::TreeModelColumnRecord{
-		public:
-			ModelColumns()
-			{ add(typeCol); add(nameCol); }
-			Gtk::TreeModelColumn<Glib::ustring> typeCol;
-			Gtk::TreeModelColumn<off_t> sizeCol;
-			Gtk::TreeModelColumn<std::string> nameCol;
-	} fileViewColumnRecord;
-	Glib::RefPtr<Gtk::ListStore> fileViewListStore;
-
-	// Parent window
-	AlarmFuckLauncher& parentWindow;
-	PathHashList* pathHashList;
-
-public:
-	explicit AlarmFuckFileChooser(AlarmFuckLauncher& parent);
-	void notify(const std::string&);
-	Gtk::TreeModel::iterator insert_entry(const Glib::ustring&, off_t, const std::string&);
-	void erase(Gtk::TreeIter&);
-	void set_hash_list(PathHashList& phl);
-};
-
-class PathHashEntry{
-public:
-	PathHashEntry(){};
-	PathHashEntry(std::unordered_set<std::string>* sp, off_t ts, Gtk::TreeModel::iterator tmr) : subfilesPointer(sp), totalSize(ts), rowIter(tmr){}
-	PathHashEntry(std::unordered_set<std::string>* sp, off_t ts) : subfilesPointer(sp), totalSize(ts){}
-	std::unordered_set<std::string>* subfilesPointer;
-	off_t totalSize;
-	Gtk::TreeModel::iterator rowIter;
-};
-
-class PathList
-{
-protected:
-	off_t totalSize;
-public:
-	bool empty(){return pathHashList.empty();};
-	off_t get_size(){return totalSize;};
-	PathList& operator=(const PathList&);
-	std::unordered_map<std::string, PathHashEntry> pathHashList;
-};
-
-// an unordered map for file keeping purposes. Keys are pathname strings and
-// values are a struct of an unordered set pointer and an off_t. For paths
-// representing files the pointer is null and the off_t is the file size in
-// bytes. For directories, the pointer points to a list of all subfiles and the
-// off_t is their total size.  If a file from an already included directory is
-// added, it is ignored. If a directory containing already included files is
-// added, those files' entries are deleted.
-class PathHashList : public PathList
-{
-    AlarmFuckFileChooser& fileChooserWindow;
-    struct stat *statBuf;
-    PathHashEntry* currentTopEntry;
-public:
-    PathHashList(AlarmFuckFileChooser& fCW):
-	fileChooserWindow(fCW)
-    {
-	totalSize = 0;
-	statBuf = new struct stat;
-	currentObject = this;
-    };
-    bool check_and_add_path(std::string);
-    void remove_path(std::string);
-    bool import_file(const std::string&);
-    void populate_path_hash_view(std::vector<std::string>);
-
-    static int traversal_func(const char *, const struct stat *, int);
-    static PathHashList* currentObject;
-};
+class AfSystemException;
 
 class AlarmFuckLauncher : public Gtk::Window
 {
@@ -187,7 +73,7 @@ private:
     void erase_file(const std::string&);
 
     void error_to_user(const Glib::ustring&, const std::string&);
-    void error_to_user(const AlarmFuckException&);
+    void error_to_user(const AfSystemException&);
     void error_to_user(const std::string&);
 public:
     AlarmFuckLauncher();

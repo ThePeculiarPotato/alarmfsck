@@ -117,12 +117,12 @@ AlarmFuckLauncher::AlarmFuckLauncher() :
      * directory. */
     std::string execDir;
     try{execDir = get_executable_dir();}
-    catch(AlarmFuckException& error){
+    catch(AfSystemException& error){
 	error_to_user(error.get_message() + ": Using current path.", error.what());
 	execDir = "";
     }
     try{baseDir = cpp_realpath(execDir + "../");}
-    catch(AlarmFuckException& error){
+    catch(AfSystemException& error){
 	error_to_user(error.get_message() + ": Using ../", error.what());
 	baseDir  = "../";
     }
@@ -204,7 +204,7 @@ void AlarmFuckLauncher::error_to_user(const Glib::ustring& appErrMessage, const 
     progressBar.set_text(appErrMessage);
 }
 
-void AlarmFuckLauncher::error_to_user(const AlarmFuckException& error){
+void AlarmFuckLauncher::error_to_user(const AfSystemException& error){
     error_to_user(error.get_message(), error.what());
 }
 
@@ -302,7 +302,7 @@ void AlarmFuckLauncher::on_ok_button_click(){
 	write_compressed_hostage_archive();
 	erase_original_hostages();
 	perform_rtc_check();
-    } catch(AlarmFuckException& error){
+    } catch(AfSystemException& error){
 	error_to_user(error);
     }
 
