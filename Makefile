@@ -19,12 +19,12 @@ LEXEC = $(BINDIR)/aflaunch
 HEXEC = $(BINDIR)/hibernator
 
 # headers upon which top-level programs depend
-RDEPS = alarmfuck.h loopplayworker.h consts.h
-LDEPS = aflaunch.h consts.h
+RDEPS = alarmfuck.h loopplayworker.h common.h
+LDEPS = aflaunch.h consts.h pathhashlist.h affilechooser.h
 
 # object files comprising the top-level programs
 RINGEROBJ = alarmfuck.o
-LAUNCHEROBJ = aflaunch.o aflaunch-logic.o affilechooser.o pathhashlist.o
+LAUNCHEROBJ = aflaunch-ui.o aflaunch-logic.o affilechooser.o pathhashlist.o
 
 # all the phony targets
 .PHONY: move all auth clean
@@ -42,6 +42,10 @@ move: $(REXEC) $(LEXEC) $(HEXEC)
 # recompile objects if relevant headers change
 $(RINGEROBJ): $(RDEPS)
 $(LAUNCHEROBJ): $(LDEPS)
+
+# header interdependencies
+affilechooser.h: pathhashlist.h
+aflaunch.h: affilechooser.h pathhashlist.h
 
 # top-level executables' compilation rules
 $(REXEC): $(RINGEROBJ)

@@ -1,4 +1,5 @@
-#include "consts.h"
+#include "common.h"
+#include "pathhashlist.h"
 #include "aflaunch.h"
 #include <glibmm/regex.h>
 #include <glibmm/spawn.h>

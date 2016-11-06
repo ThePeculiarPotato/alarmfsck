@@ -7,20 +7,21 @@ extern "C" {
 #include <ftw.h>
 }
 
-#define FILE_DELIM '/'
+const char FILE_DELIM = '/';
 
 PathHashList* PathHashList::currentObject = NULL;
 
-bool PathHashList::check_and_add_path(std::string path)
+bool PathHashList::check_and_add_path(const std::string& path, Notifiable& notifiable)
 {
     // check absoluteness and that it's not the whole system
     std::string prefixString = "Skipped " + path + ": ";
     if(path.front() != FILE_DELIM){
-	fileChooserWindow.notify(prefixString + "not an absolute path.\n");
+	notifiable.notify(prefixString + "not an absolute path.\n");
 	return false;
     }
     if(path == "/"){
-	fileChooserWindow.notify(prefixString + "please do not gamble away the whole system.\n");
+	//TODO: also check whether parent directories of the alarmfuck executables are included in path
+	notifiable.notify(prefixString + "please do not gamble away the whole system.\n");
 	return false;
     }
 
@@ -28,14 +29,14 @@ bool PathHashList::check_and_add_path(std::string path)
     size_t dashPos = std::string::npos;
     do{
 	if( pathHashList.count(path.substr(0,dashPos)) ){
-	    fileChooserWindow.notify(prefixString + "already listed.\n");
+	    notifiable.notify(prefixString + "already listed.\n");
 	    return false;
 	}
     } while( (dashPos = path.find_last_of(FILE_DELIM, dashPos - 1)) != 0);
 
     // file selector sometimes returns directories ... check for file type manually
     if( stat(path.c_str(), statBuf) != 0 ){
-	fileChooserWindow.notify("Error processing " + path + ": " +
+	notifiable.notify("Error processing " + path + ": " +
 		strerror(errno) + "\n");
 	return false;
     }
@@ -56,18 +57,17 @@ bool PathHashList::check_and_add_path(std::string path)
 	    break;
 
 	default:
-	    fileChooserWindow.notify(prefixString + "incompatible file type.\n");
+	    notifiable.notify(prefixString + "incompatible file type.\n");
 	    return false;
-
     }
 
     if( access(path.c_str(), permissionMask) ){
-	fileChooserWindow.notify(prefixString + "no write permission.\n");
+	notifiable.notify(prefixString + "no write permission.\n");
 	return false;
     }
     // update hash lists and fileView
     if( (permissionMask & X_OK) == 0 ){// ordinary file
-	PathHashEntry entry(NULL, statBuf->st_size, fileChooserWindow.insert_entry(type, statBuf->st_size, path));
+	PathHashEntry entry(NULL, statBuf->st_size, notifiable.insert_entry(type, statBuf->st_size, path));
 	std::pair<std::string,PathHashEntry> somePair(path, entry);
 	pathHashList.insert(somePair);
 	totalSize += statBuf->st_size;
@@ -75,7 +75,7 @@ bool PathHashList::check_and_add_path(std::string path)
 	currentTopEntry = new PathHashEntry(new std::unordered_set<std::string>, 0);
 	ftw( path.c_str(), &PathHashList::traversal_func, 15 );
 
-	currentTopEntry->rowIter = fileChooserWindow.insert_entry(type, currentTopEntry->totalSize, path);
+	currentTopEntry->rowIter = notifiable.insert_entry(type, currentTopEntry->totalSize, path);
 
 	std::pair<std::string,PathHashEntry> somePair(path, *currentTopEntry);
 	pathHashList.insert(somePair);
