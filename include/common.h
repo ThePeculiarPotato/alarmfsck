@@ -29,4 +29,10 @@ public:
     const std::string& get_message() const {return message;};
 };
 
+class AfUserException : public std::logic_error
+{
+public:
+    AfUserException(std::string message): logic_error(message){};
+};
+
 #endif // ORG_WALRUS_ALARMFUCK_COMMON_H

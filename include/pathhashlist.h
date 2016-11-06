@@ -3,7 +3,7 @@
 
 #include <unordered_set>
 #include <unordered_map>
-#include <gtkmm/liststore.h>
+#include <gtkmm/treestore.h>
 extern "C" {
 #include <sys/types.h>
 }
@@ -11,32 +11,33 @@ extern "C" {
 class AlarmFuckFileChooser;
 
 class PathHashEntry{
+private:
+    Gtk::TreeStore::iterator iter;
 public:
-	PathHashEntry(){};
-	PathHashEntry(std::unordered_set<std::string>* sp, off_t ts, Gtk::TreeModel::iterator tmr) : subfilesPointer(sp), totalSize(ts), rowIter(tmr){}
-	PathHashEntry(std::unordered_set<std::string>* sp, off_t ts) : subfilesPointer(sp), totalSize(ts){}
-	std::unordered_set<std::string>* subfilesPointer;
-	off_t totalSize;
-	Gtk::TreeModel::iterator rowIter;
+    PathHashEntry(){};
+    PathHashEntry(std::unordered_set<std::string>* sp, off_t ts) : subfilesPointer(sp), totalSize(ts){}
+    std::unordered_set<std::string>* subfilesPointer;
+    off_t totalSize;
 };
 
 class PathList
 {
 protected:
-	off_t totalSize;
+    off_t totalSize;
 public:
-	bool empty(){return pathHashList.empty();};
-	off_t get_size(){return totalSize;};
-	PathList& operator=(const PathList&);
-	std::unordered_map<std::string, PathHashEntry> pathHashList;
+    bool empty(){return llPathMap.empty();};
+    off_t get_size(){return totalSize;};
+    PathList& operator=(const PathList&);
+    std::unordered_map<std::string, PathHashEntry> llPathMap;
 };
 
-class Notifiable
+class PathListMirror
 {
 public:
-    Notifiable(){};
-    virtual ~Notifiable();
+    PathListMirror(){};
+    virtual ~PathListMirror();
     virtual void notify(const std::string& message){};
+    virtual void insert_entry(const Glib::ustring&, off_t, const std::string&){};
 };
 
 // an unordered map for file keeping purposes. Keys are pathname strings and
@@ -58,9 +59,9 @@ public:
 	statBuf = new struct stat;
 	currentObject = this;
     };
-    bool check_and_add_path(const std::string&, Notifiable&);
+    bool check_and_add_path(const std::string&, PathListMirror&);
     bool check_and_add_path(const std::string& message){
-	Notifiable dummy;
+	PathListMirror dummy;
 	return check_and_add_path(message, dummy);};
     void remove_path(std::string);
     bool import_file(const std::string&);
