@@ -127,7 +127,7 @@ void PathHashList::populate_path_hash_view(std::vector<std::string> fileList){
 			+ std::to_string(invalid) + " skipped.\n");
 }
 
-bool PathHashList::import_file(std::string fileName){
+bool PathHashList::import_file(const std::string& fileName){
 	if(access(fileName.c_str(), R_OK) == -1) return false;
 	std::ifstream ifs(fileName);
 	if(!ifs){
@@ -140,7 +140,6 @@ bool PathHashList::import_file(std::string fileName){
 		if(ifs.get() == '\n') noOfLines++;
 		// TODO: figure out why EOF adds an extra newline
 	}
-	// TODO: and why we must clear the failbit ... quite ugly.
 	ifs.clear(std::ios_base::eofbit);
 	std::cout << "Reading " << noOfLines << " lines from " << fileName << std::endl;
 	// make fileList vector

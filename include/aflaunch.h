@@ -17,6 +17,7 @@
 #include <unordered_set>
 #include <unordered_map>
 #include <system_error>
+#include <cerrno>
 extern "C" {
 #include <sys/types.h>
 #include <sys/stat.h>
@@ -25,6 +26,17 @@ extern "C" {
 #include <ftw.h>
 #include <bsd/stdlib.h>
 }
+
+class AlarmFuckException : public std::system_error
+{
+private:
+    const std::string message;
+public:
+    AlarmFuckException(std::string message, int code): std::system_error(code,
+	    std::system_category()), message(message) {};
+    AlarmFuckException(std::string message): AlarmFuckException(message, errno) {};
+    const std::string& get_message() const {return message;};
+};
 
 class AlarmFuckLauncher;
 class PathHashList;
@@ -102,87 +114,86 @@ public:
 // added, those files' entries are deleted.
 class PathHashList : public PathList
 {
-	AlarmFuckFileChooser& fileChooserWindow;
-	struct stat *statBuf;
-	PathHashEntry* currentTopEntry;
+    AlarmFuckFileChooser& fileChooserWindow;
+    struct stat *statBuf;
+    PathHashEntry* currentTopEntry;
 public:
-	PathHashList(AlarmFuckFileChooser& fCW):
-		fileChooserWindow(fCW)
-	{
-		totalSize = 0;
-		statBuf = new struct stat;
-		currentObject = this;
-	};
-	bool check_and_add_path(std::string);
-	void remove_path(std::string);
-	bool import_file(std::string);
-	void populate_path_hash_view(std::vector<std::string>);
+    PathHashList(AlarmFuckFileChooser& fCW):
+	fileChooserWindow(fCW)
+    {
+	totalSize = 0;
+	statBuf = new struct stat;
+	currentObject = this;
+    };
+    bool check_and_add_path(std::string);
+    void remove_path(std::string);
+    bool import_file(const std::string&);
+    void populate_path_hash_view(std::vector<std::string>);
 
-	static int traversal_func(const char *, const struct stat *, int);
-	static PathHashList* currentObject;
+    static int traversal_func(const char *, const struct stat *, int);
+    static PathHashList* currentObject;
 };
 
 class AlarmFuckLauncher : public Gtk::Window
 {
-
 private:
-	// General widgets:
-	Gtk::Button okButton, cancelButton, hostageSelectButton;
-	Gtk::CheckButton hostageCheckBox;
-	Gtk::Label wakeMeUpLabel, onLabel, takeHostagesLabel;
-	Gtk::Box topHBox, vBox, inHBox, atHBox, hostageHBox;
-	Gtk::ProgressBar progressBar;
-	Gtk::ButtonBox bottomButtonHBox;
-	Gtk::ComboBox inAtComboBox, timeUnitComboBox;
-	Gtk::Entry timeIntervalEntry, timeEntry, dateEntry;
-	Glib::DateTime timeStart, timeWakeup;
-	AlarmFuckFileChooser fileChooserWindow;
-	PathHashList pathHashList;
-	PathList userPathHashList;
-	bool updatedFileList;
+    // General widgets:
+    Gtk::Button okButton, cancelButton, hostageSelectButton;
+    Gtk::CheckButton hostageCheckBox;
+    Gtk::Label wakeMeUpLabel, onLabel, takeHostagesLabel;
+    Gtk::Box topHBox, vBox, inHBox, atHBox, hostageHBox;
+    Gtk::ProgressBar progressBar;
+    Gtk::ButtonBox bottomButtonHBox;
+    Gtk::ComboBox inAtComboBox, timeUnitComboBox;
+    Gtk::Entry timeIntervalEntry, timeEntry, dateEntry;
+    Glib::DateTime timeStart, timeWakeup;
+    AlarmFuckFileChooser fileChooserWindow;
+    PathHashList pathHashList;
+    PathList userPathHashList;
+    bool updatedFileList;
 
-	// Drop-down menus
-	class ModelColumns : public Gtk::TreeModelColumnRecord{
-		public:
-			ModelColumns()
-			{ add(idCol); add(textCol); }
-			Gtk::TreeModelColumn<int> idCol;
-			Gtk::TreeModelColumn<Glib::ustring> textCol;
-	} inAtColumnRecord, timeUnitColumnRecord;
-	Glib::RefPtr<Gtk::ListStore> inAtListStore;
-	Glib::RefPtr<Gtk::ListStore> timeUnitListStore;
+    // Drop-down menus
+    class ModelColumns : public Gtk::TreeModelColumnRecord{
+	public:
+	    ModelColumns()
+	    { add(idCol); add(textCol); }
+	    Gtk::TreeModelColumn<int> idCol;
+	    Gtk::TreeModelColumn<Glib::ustring> textCol;
+    } inAtColumnRecord, timeUnitColumnRecord;
+    Glib::RefPtr<Gtk::ListStore> inAtListStore;
+    Glib::RefPtr<Gtk::ListStore> timeUnitListStore;
 
-	// File paths
-	std::string baseDir;
-	std::string fullHostageFilePath;
+    // File paths
+    std::string baseDir;
+    std::string fullHostageFilePath;
 
-	void on_in_at_combo_box_change();
-	void on_hostage_check_box_click();
-	void on_hostage_select_button_click(){fileChooserWindow.show();};
-	void on_ok_button_click();
+    void on_in_at_combo_box_change();
+    void on_hostage_check_box_click();
+    void on_hostage_select_button_click(){fileChooserWindow.show();};
+    void on_ok_button_click();
 
-	void populate_in_at_combo_box();
-	void populate_time_unit_combo_box();
+    void populate_in_at_combo_box();
+    void populate_time_unit_combo_box();
 
-	void check_hostage_file();
-	bool write_hostage_list_file();
-	bool write_hostage_archive();
-	bool add_path_to_archive(TAR*,const std::string&);
-	bool check_time_entry();
-	bool perform_rtc_check();
-	bool write_compressed_hostage_archive();
-	bool erase_original_hostages();
-	bool erase_file(const std::string&);
+    void check_hostage_file();
+    void write_hostage_list_file();
+    void write_or_update_hostage_list_file();
+    void write_hostage_archive();
+    void add_path_to_archive(std::unique_ptr<TAR>&,const std::string&);
+    bool check_time_entry();
+    bool perform_rtc_check();
+    void write_compressed_hostage_archive();
+    void erase_original_hostages();
+    void erase_file(const std::string&);
 
-	void error_to_user(const Glib::ustring&, const std::string&, const bool =true);
-	void error_to_user(const Glib::ustring&, const std::system_error&, const bool =true);
-	void error_to_user(const Glib::ustring&, const bool =true);
+    void error_to_user(const Glib::ustring&, const std::string&);
+    void error_to_user(const AlarmFuckException&);
+    void error_to_user(const std::string&);
 public:
-	AlarmFuckLauncher();
-	void update_user_hash_list(){userPathHashList = pathHashList;};
-	void check_good_to_go();
-	void signal_updated_files(){ updatedFileList = true; }
+    AlarmFuckLauncher();
+    void update_user_hash_list(){userPathHashList = pathHashList;};
+    void check_good_to_go();
+    void signal_updated_files(){ updatedFileList = true; };
 };
 
 #endif // ORG_WALRUS_ALARMFUCK_AFLAUNCH_H
-

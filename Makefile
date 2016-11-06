@@ -24,7 +24,7 @@ LDEPS = aflaunch.h consts.h
 
 # object files comprising the top-level programs
 RINGEROBJ = alarmfuck.o
-LAUNCHEROBJ = aflaunch.o affilechooser.o pathhashlist.o
+LAUNCHEROBJ = aflaunch.o aflaunch-logic.o affilechooser.o pathhashlist.o
 
 # all the phony targets
 .PHONY: move all auth clean

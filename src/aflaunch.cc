@@ -1,16 +1,15 @@
-#include "aflaunch.h"
 #include "consts.h"
-#include <gtkmm/application.h>
-#include <gtkmm/messagedialog.h>
+#include "aflaunch.h"
 #include <glibmm/regex.h>
 #include <glibmm/spawn.h>
+#include <gtkmm/messagedialog.h>
 #include <iostream>
 #include <fstream>
 #include <string>
 #include <cstdlib>
 #include <cstdio>
-#include <exception>
-#include <cerrno>
+#include <memory>
+#include <gtkmm/application.h>
 extern "C" {
 #include <fcntl.h>
 #include <unistd.h>
@@ -19,9 +18,6 @@ extern "C" {
 #include <libgen.h>
 #include <sys/types.h>
 }
-#include <boost/iostreams/copy.hpp>
-#include <boost/iostreams/filter/gzip.hpp>
-#include <boost/iostreams/filtering_streambuf.hpp>
 
 AlarmFuckLauncher::AlarmFuckLauncher() :
     okButton("Go"),
@@ -42,69 +38,71 @@ AlarmFuckLauncher::AlarmFuckLauncher() :
 {
     fileChooserWindow.set_hash_list(pathHashList);
 
-    // window setup
-    set_border_width(padding);
-    set_title("alarmfuck Launcher");
-    set_default_size(380, 150);
-
-    // Widget setup
-    topHBox.pack_start(wakeMeUpLabel, Gtk::PACK_EXPAND_WIDGET);
-    topHBox.pack_start(inAtComboBox, Gtk::PACK_EXPAND_WIDGET);
-    topHBox.pack_start(inHBox, Gtk::PACK_EXPAND_WIDGET);
-    hostageHBox.pack_start(hostageCheckBox, Gtk::PACK_SHRINK);
-    hostageHBox.pack_start(takeHostagesLabel, Gtk::PACK_SHRINK);
-    hostageHBox.pack_start(hostageSelectButton, Gtk::PACK_SHRINK, 19);
-    bottomButtonHBox.set_layout(Gtk::BUTTONBOX_SPREAD);
-    bottomButtonHBox.set_spacing(40);
-    bottomButtonHBox.add(okButton);
-    bottomButtonHBox.add(cancelButton);
-    vBox.pack_start(topHBox, Gtk::PACK_EXPAND_PADDING);
-    vBox.pack_start(hostageHBox, Gtk::PACK_EXPAND_PADDING);
-    vBox.pack_start(progressBar, Gtk::PACK_EXPAND_PADDING);
-    vBox.pack_start(bottomButtonHBox, Gtk::PACK_EXPAND_PADDING);
-    add(vBox);
-
-    progressBar.set_show_text(true);
-
-    timeIntervalEntry.set_text(std::to_string(suggested_hours));
-    timeIntervalEntry.set_alignment(1);
-    timeIntervalEntry.set_width_chars(4);
-
-    inHBox.pack_start(timeIntervalEntry, Gtk::PACK_EXPAND_PADDING);
-    inHBox.pack_start(timeUnitComboBox, Gtk::PACK_EXPAND_WIDGET);
-
-    timeStart = Glib::DateTime::create_now_local();
-    timeWakeup = timeStart.add_hours(suggested_hours);
-    timeEntry.set_text(timeWakeup.format("%T"));
-    timeEntry.set_alignment(.5);
-    timeEntry.set_width_chars(8);
-
-    dateEntry.set_text(timeWakeup.format("%d/%m/%Y"));
-    dateEntry.set_alignment(.5);
-    dateEntry.set_width_chars(8);
-
-    atHBox.pack_start(timeEntry, Gtk::PACK_EXPAND_PADDING);
-    atHBox.pack_start(onLabel, Gtk::PACK_EXPAND_WIDGET);
-    atHBox.pack_start(dateEntry, Gtk::PACK_EXPAND_PADDING);
-    atHBox.show_all_children();
-    atHBox.show();
-
-    // Drop-down menus
-    populate_time_unit_combo_box();
-    populate_in_at_combo_box();
-
-    // associate signal handlers
-    hostageSelectButton.set_sensitive(false);
-    hostageSelectButton.signal_clicked().connect(sigc::mem_fun(*this,
-		&AlarmFuckLauncher::on_hostage_select_button_click));
-    hostageCheckBox.signal_toggled().connect(sigc::mem_fun(*this,
-		&AlarmFuckLauncher::on_hostage_check_box_click));
-    okButton.signal_clicked().connect(sigc::mem_fun(*this,
-		&AlarmFuckLauncher::on_ok_button_click));
-    cancelButton.signal_clicked().connect(sigc::mem_fun(*this,
-		&Gtk::Widget::hide));
-    inAtComboBox.signal_changed().connect(sigc::mem_fun(*this,
-		&AlarmFuckLauncher::on_in_at_combo_box_change));
+    /* UI setup {{{ */
+        // window setup
+        set_border_width(padding);
+        set_title("alarmfuck Launcher");
+        set_default_size(380, 150);
+    
+        // Widget setup
+        topHBox.pack_start(wakeMeUpLabel, Gtk::PACK_EXPAND_WIDGET);
+        topHBox.pack_start(inAtComboBox, Gtk::PACK_EXPAND_WIDGET);
+        topHBox.pack_start(inHBox, Gtk::PACK_EXPAND_WIDGET);
+        hostageHBox.pack_start(hostageCheckBox, Gtk::PACK_SHRINK);
+        hostageHBox.pack_start(takeHostagesLabel, Gtk::PACK_SHRINK);
+        hostageHBox.pack_start(hostageSelectButton, Gtk::PACK_SHRINK, 19);
+        bottomButtonHBox.set_layout(Gtk::BUTTONBOX_SPREAD);
+        bottomButtonHBox.set_spacing(40);
+        bottomButtonHBox.add(okButton);
+        bottomButtonHBox.add(cancelButton);
+        vBox.pack_start(topHBox, Gtk::PACK_EXPAND_PADDING);
+        vBox.pack_start(hostageHBox, Gtk::PACK_EXPAND_PADDING);
+        vBox.pack_start(progressBar, Gtk::PACK_EXPAND_PADDING);
+        vBox.pack_start(bottomButtonHBox, Gtk::PACK_EXPAND_PADDING);
+        add(vBox);
+    
+        progressBar.set_show_text(true);
+    
+        timeIntervalEntry.set_text(std::to_string(suggested_hours));
+        timeIntervalEntry.set_alignment(1);
+        timeIntervalEntry.set_width_chars(4);
+    
+        inHBox.pack_start(timeIntervalEntry, Gtk::PACK_EXPAND_PADDING);
+        inHBox.pack_start(timeUnitComboBox, Gtk::PACK_EXPAND_WIDGET);
+    
+        timeStart = Glib::DateTime::create_now_local();
+        timeWakeup = timeStart.add_hours(suggested_hours);
+        timeEntry.set_text(timeWakeup.format("%T"));
+        timeEntry.set_alignment(.5);
+        timeEntry.set_width_chars(8);
+    
+        dateEntry.set_text(timeWakeup.format("%d/%m/%Y"));
+        dateEntry.set_alignment(.5);
+        dateEntry.set_width_chars(8);
+    
+        atHBox.pack_start(timeEntry, Gtk::PACK_EXPAND_PADDING);
+        atHBox.pack_start(onLabel, Gtk::PACK_EXPAND_WIDGET);
+        atHBox.pack_start(dateEntry, Gtk::PACK_EXPAND_PADDING);
+        atHBox.show_all_children();
+        atHBox.show();
+    
+        // Drop-down menus
+        populate_time_unit_combo_box();
+        populate_in_at_combo_box();
+    
+        // associate signal handlers
+        hostageSelectButton.set_sensitive(false);
+        hostageSelectButton.signal_clicked().connect(sigc::mem_fun(*this,
+    		&AlarmFuckLauncher::on_hostage_select_button_click));
+        hostageCheckBox.signal_toggled().connect(sigc::mem_fun(*this,
+    		&AlarmFuckLauncher::on_hostage_check_box_click));
+        okButton.signal_clicked().connect(sigc::mem_fun(*this,
+    		&AlarmFuckLauncher::on_ok_button_click));
+        cancelButton.signal_clicked().connect(sigc::mem_fun(*this,
+    		&Gtk::Widget::hide));
+        inAtComboBox.signal_changed().connect(sigc::mem_fun(*this,
+    		&AlarmFuckLauncher::on_in_at_combo_box_change));
+    /* }}} UI setup */
 
     // show all
     show_all_children();
@@ -119,43 +117,17 @@ AlarmFuckLauncher::AlarmFuckLauncher() :
      * directory. */
     std::string execDir;
     try{execDir = get_executable_dir();}
-    catch(std::system_error& error){
-	error_to_user("Cannot determine executable path, using current dir");
+    catch(AlarmFuckException& error){
+	error_to_user(error.get_message() + ": Using current path.", error.what());
 	execDir = "";
     }
     try{baseDir = cpp_realpath(execDir + "../");}
-    catch(std::system_error& error){
-	error_to_user("Cannot canonicalize path, using ../");
+    catch(AlarmFuckException& error){
+	error_to_user(error.get_message() + ": Using ../", error.what());
 	baseDir  = "../";
     }
     fullHostageFilePath = baseDir + data_dir + hostage_file;
     check_hostage_file();
-}
-
-void AlarmFuckLauncher::check_hostage_file(){
-    std::cout << fullHostageFilePath << std::endl;
-    if(access(fullHostageFilePath.c_str(), F_OK) == 0){
-	std::cout << "Found hostage file " << hostage_file << std::endl;
-	if(pathHashList.import_file(fullHostageFilePath.c_str())){
-	    update_user_hash_list();
-	    hostageCheckBox.set_active();
-	    hostageCheckBox.toggled();
-	}
-    }
-}
-
-std::string get_executable_dir(){
-    char exePath[PATH_MAX];
-    ssize_t exePathSize = readlink("/proc/self/exe", exePath, PATH_MAX);
-    if(exePathSize == -1) throw std::exception();
-    exePath[exePathSize] = '\0';
-    return std::string(dirname(exePath)) + file_delim;
-}
-
-std::string cpp_realpath(const std::string& raw_path){
-    char *pathCand = realpath(raw_path.c_str(), NULL);
-    if(pathCand == NULL) throw std::exception();
-    return std::string(pathCand) + file_delim;
 }
 
 void AlarmFuckLauncher::populate_in_at_combo_box()
@@ -223,104 +195,25 @@ void AlarmFuckLauncher::check_good_to_go(){
 }
 
 // A bunch of error-message functions
-void AlarmFuckLauncher::error_to_user(const Glib::ustring& appErrMessage, const std::string& sysErrMessage, const bool punctuation){
-    // appErrMessage should end with no punctuation for pretty formatting.
+void AlarmFuckLauncher::error_to_user(const Glib::ustring& appErrMessage, const std::string& sysErrMessage){
     // sysErrMessage is supposed to come from errno or a similar error mechanism
-    std::cout << appErrMessage << (punctuation ? ": " : "") << sysErrMessage << std::endl;
-    progressBar.set_text(appErrMessage + (punctuation ? "." : ""));
-}
-
-void AlarmFuckLauncher::error_to_user(const Glib::ustring& appErrMessage, const std::system_error& error, const bool punctuation){
-    error_to_user(appErrMessage, error.what(), punctuation);
-}
-
-void AlarmFuckLauncher::error_to_user(const Glib::ustring& appErrMessage, const bool hasSysErr){
-    if(hasSysErr)
-	error_to_user(appErrMessage, std::system_category().default_error_condition(errno).message(), true);
+    if(sysErrMessage.size() > 0)
+	std::cerr << sysErrMessage << "\n\t" << appErrMessage;
     else
-	error_to_user(appErrMessage, "", false);
+	std::cerr << "\t" << appErrMessage;
+    progressBar.set_text(appErrMessage);
 }
 
-bool AlarmFuckLauncher::write_hostage_list_file(){
-    progressBar.set_text("Writing hostage list to disk.");
-    std::ofstream ofs(fullHostageFilePath);
-    if(!ofs){
-	error_to_user("Could not open " + hostage_file);
-	return false;
-    }
-    // reference with shorter name
-    auto& path_map = userPathHashList.pathHashList;
-    // loop over path_map and write out top paths
-    for(auto it = path_map.begin(); it != path_map.end(); it++){
-	ofs << it->first << std::endl;
-    }
-    ofs.close();
-    return true;
+void AlarmFuckLauncher::error_to_user(const AlarmFuckException& error){
+    error_to_user(error.get_message(), error.what());
 }
 
-bool AlarmFuckLauncher::add_path_to_archive(TAR *tarStrucPtr, const std::string& str){
-    const char *fpath = str.c_str();
-    if(tar_append_file(tarStrucPtr, fpath, fpath) == -1){
-	error_to_user("Error adding " + str + " to archive");
-	progressBar.set_fraction(0.0);
-	tar_close(tarStrucPtr);
-	return false;
-    }
-    return true;
-}
-
-bool AlarmFuckLauncher::erase_file(const std::string& str){
-    // TODO: for now this just rm's a file, later add an option to shred it
-    if(std::remove(str.c_str()) == -1){
-	error_to_user("Error removing " + str);
-	return false;
-    }
-    return true;
-}
-
-bool AlarmFuckLauncher::write_hostage_archive(){
-    double currentSize = 0, totalSize = userPathHashList.get_size();
-    TAR *tarStrucPtr = new TAR;
-    // TODO: if any of these archives exists before it has to be shredded
-    // open - the TAR_GNU option is necessary for files with long names
-    std::string fullHostageArchivePath = baseDir + data_dir + hostage_archive;
-    if(tar_open(&tarStrucPtr, fullHostageArchivePath.c_str(), NULL, O_WRONLY | O_CREAT | O_TRUNC, 0755, TAR_GNU) == -1){
-	error_to_user("Error opening " + hostage_archive);
-	return false;
-    }
-    // TODO: extract the below loop into general expression, possibly taking a lambda
-    // reference with shorter name
-    std::unordered_map<std::string,PathHashEntry>& path_map = userPathHashList.pathHashList;
-    // double loop over path_map
-    for(auto it = path_map.begin(); it != path_map.end(); it++){
-	// ordinary file
-	if(it->second.subfilesPointer == NULL){
-	    if(!add_path_to_archive(tarStrucPtr,it->first)) return false;
-	}
-	// directory
-	else{
-	    std::unordered_set<std::string>& subPaths = *(it->second.subfilesPointer);
-	    for(auto it2 = subPaths.begin(); it2 != subPaths.end(); it2++){
-		if(!add_path_to_archive(tarStrucPtr,*it2)) return false;
-	    }
-	}
-	// update progress bar
-	currentSize += it->second.totalSize;
-	progressBar.set_fraction(currentSize/totalSize);
-    }
-    // finalize archive
-    if(tar_append_eof(tarStrucPtr) == -1){
-	error_to_user("Error finalizing " + hostage_archive);
-	progressBar.set_fraction(0.0);
-	tar_close(tarStrucPtr);
-	return false;
-    }
-    // close and finish
-    tar_close(tarStrucPtr);
-    return true;
+void AlarmFuckLauncher::error_to_user(const std::string& appErrMessage){
+    error_to_user(appErrMessage, "");
 }
 
 bool AlarmFuckLauncher::check_time_entry(){
+    // TODO refactor this a bit
     Gtk::TreeModel::iterator iter = inAtComboBox.get_active();
     switch((*iter)[inAtColumnRecord.idCol]){
 	case 1:
@@ -402,26 +295,18 @@ void AlarmFuckLauncher::on_ok_button_click(){
 	    going to be. And don't forget to turn up your speakers if you still want to do this.");
     if(dialog.run() != Gtk::RESPONSE_OK) return;
 
-    // Write hostage file, don't update it if it wasn't modified after importing it
-    if(!updatedFileList && access(fullHostageFilePath.c_str(), F_OK) == 0){
-	struct stat * statBuf = new struct stat;
-	if(stat(fullHostageFilePath.c_str(), statBuf) != 0){
-	    error_to_user("Could not open " + hostage_file);
-	    return;
-	}
-	if(statBuf->st_mtime > timeStart.to_unix()){
-	    if(!write_hostage_list_file()) return;
-	}
-    } else {
-	if(!write_hostage_list_file()) return;
-    }
     // perform all the checks
-    if(!write_hostage_archive()) return;
-    if(!write_compressed_hostage_archive()) return;
-    if(!erase_original_hostages()) return;
-    if(!perform_rtc_check()) return;
+    try {
+	write_or_update_hostage_list_file();
+	write_hostage_archive();
+	write_compressed_hostage_archive();
+	erase_original_hostages();
+	perform_rtc_check();
+    } catch(AlarmFuckException& error){
+	error_to_user(error);
+    }
 
-    // TODO: put in a little function
+    // final time check
     Glib::DateTime finalTimeCheck = Glib::DateTime::create_now_local();
     finalTimeCheck.add_seconds(5);
     if(timeWakeup.compare(finalTimeCheck) <= 0){
@@ -434,80 +319,6 @@ void AlarmFuckLauncher::on_ok_button_click(){
     Glib::spawn_async("",args);
     std::cout << "exiting" << std::endl;
     hide();
-}
-
-bool AlarmFuckLauncher::erase_original_hostages(){
-    // TODO: decide on when to throw errors
-    std::unordered_map<std::string,PathHashEntry>& path_map = userPathHashList.pathHashList;
-    // double loop over path_map
-    // TODO: general thingy
-    for(auto it = path_map.begin(); it != path_map.end(); it++){
-	// directory
-	if(it->second.subfilesPointer != NULL){
-	    std::unordered_set<std::string>& subPaths = *(it->second.subfilesPointer);
-	    for(auto it2 = subPaths.begin(); it2 != subPaths.end(); it2++){
-		erase_file(*it2);
-	    }
-	}
-	erase_file(it->first);
-    }
-    erase_file(baseDir + data_dir + hostage_archive);
-    return true;
-}
-
-bool AlarmFuckLauncher::write_compressed_hostage_archive(){
-    // TODO: add error checking
-    namespace io = boost::iostreams;
-    std::ofstream fileOut(baseDir + data_dir + hostage_compressed, std::ios_base::out | std::ios_base::binary);
-    io::filtering_streambuf<io::output> out;
-    out.push(io::gzip_compressor());
-    out.push(fileOut);
-    std::ifstream fileIn(baseDir + data_dir + hostage_archive, std::ios_base::in | std::ios_base::binary);
-    io::copy(fileIn, out);
-    out.pop();
-    fileIn.close();
-    return true;
-}
-
-#define DEFAULT_RTC			"rtc0"
-#define DEFAULT_RTC_DEVICE		"/dev/" DEFAULT_RTC
-#define SYS_WAKEUP_PATH			"/sys/class/rtc/" DEFAULT_RTC "/device/power/wakeup"
-#define SYS_POWER_STATE_PATH		"/sys/power/state"
-
-bool AlarmFuckLauncher::perform_rtc_check(){
-    if(access(DEFAULT_RTC_DEVICE, F_OK)){
-	error_to_user("Could not find RTC device");
-	return false;
-    }
-    std::ifstream ifs(SYS_POWER_STATE_PATH);
-    if(!ifs){
-	error_to_user("Could not determine hibernate capability");
-	return false;
-    }
-    std::string tempString;
-    std::getline(ifs, tempString);
-    ifs.close();
-    if(!ifs){
-	error_to_user("Error closing power state file");
-	return false;
-    }
-
-    if(tempString.find("disk") == std::string::npos){
-	error_to_user("Sorry, system does not support hibernation");
-	return false;
-    }
-
-    ifs.open(SYS_WAKEUP_PATH);
-    if(!ifs){
-	error_to_user("Sorry, wakeups not enabled");
-	return false;
-    }
-    std::getline(ifs, tempString);
-    if(tempString.compare("enabled") != 0){
-	error_to_user("Sorry, wakeups not enabled");
-	return false;
-    }
-    return true;
 }
 
 int main (int argc, char *argv[])
