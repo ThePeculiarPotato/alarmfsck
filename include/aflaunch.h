@@ -1,7 +1,6 @@
 #ifndef ORG_WALRUS_ALARMFUCK_AFLAUNCH_H
 #define ORG_WALRUS_ALARMFUCK_AFLAUNCH_H
 
-#include "pathhashlist.h"
 #include "affilechooser.h"
 #include <gtkmm/button.h>
 #include <gtkmm/window.h>
@@ -33,9 +32,6 @@ private:
     Gtk::ComboBox inAtComboBox, timeUnitComboBox;
     Gtk::Entry timeIntervalEntry, timeEntry, dateEntry;
     Glib::DateTime timeStart, timeWakeup;
-    AlarmFuckFileChooser fileChooserWindow;
-    PathHashList pathHashList;
-    PathList userPathHashList;
     bool updatedFileList;
 
     // Drop-down menus
@@ -55,7 +51,7 @@ private:
 
     void on_in_at_combo_box_change();
     void on_hostage_check_box_click();
-    void on_hostage_select_button_click(){fileChooserWindow.show();};
+    void on_hostage_select_button_click();
     void on_ok_button_click();
 
     void populate_in_at_combo_box();

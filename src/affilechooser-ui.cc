@@ -4,9 +4,6 @@
 #include <gtkmm/filechooserdialog.h>
 #include <iostream>
 #include <cstdlib>
-extern "C" {
-#include <ftw.h>
-}
 
 const char FILE_DELIM = '/';
 
@@ -19,8 +16,10 @@ AlarmFuckFileChooser::AlarmFuckFileChooser(AlarmFuckLauncher& parent) :
     cancelButton("Cancel"),
     bottomButtonHBox(Gtk::ORIENTATION_HORIZONTAL),
     vBox(Gtk::ORIENTATION_VERTICAL, 5),
-    parentWindow(parent)
+    parentWindow{parent}
 {
+    get_set_first_obj_ptr(this);
+
     /* UI initialization {{{ */
     set_border_width(10);
     set_title("Choose Files to Scramble");
@@ -99,149 +98,28 @@ void AlarmFuckFileChooser::populate_path_hash_view(std::vector<std::string> file
     notify(std::to_string(valid) + " paths added, " + std::to_string(invalid) + " skipped.\n");
 }
 
-void AlarmFuckFileChooser::check_path_prerequisites(const std::string& filePath){
-    std::string prefixString = "Skipped " + filePath + ": ";
-    // check absoluteness and that it's not the whole system
-    if(filePath.front() != FILE_DELIM){
-	throw AfUserException("not an absolute path");
-    }
-    if(filePath == "/"){
-	//TODO: also check whether parent directories of the alarmfuck executables are included in path
-	throw AfUserException("please do not gamble away the whole system");
-    }
-
-    // check if the path is included already
-    if( hashMap.count(filePath) ){
-	throw AfUserException("already listed");
-    }
-}
-
-std::pair<bool, off_t> AlarmFuckFileChooser::is_accessible_directory(const std::string& filePath){
-    int permissionMask;
-    bool isDir = false;
-    std::unique_ptr<struct stat> statBuf{new struct stat};
-    if(stat(filePath.c_str(), statBuf.get()) != 0)
-	throw AfSystemException("Error processing " + filePath);
-    switch(statBuf->st_mode & S_IFMT)
-    {
-	// ordinary file
-	case S_IFREG:
-	    permissionMask = W_OK;
-	    break;
-
-	    // folder
-	case S_IFDIR:
-	    permissionMask = W_OK | X_OK;
-	    isDir = true;
-	    break;
-
-	default:
-	    throw AfUserException("incompatible file type");
-    }
-
-    if( access(filePath.c_str(), permissionMask) != 0 ){
-	throw AfUserException("no write permission.");
-    }
-    return std::pair<bool,size_t>(isDir, statBuf->st_size);
-}
-
-
-bool AlarmFuckFileChooser::check_and_add_path(const std::string& filePath)
-{
-    bool isDir = false;
-    off_t size = 0;
-    try{
-	check_path_prerequisites(filePath);
-	auto resPair = is_accessible_directory(filePath);
-	isDir = resPair.first;
-	size = resPair.second;
-    } catch (AfUserException& exc) {
-	notify("Skipped " + filePath + ": " + exc.what() + ".\n");
-	return false;
-    } catch (AfSystemException& exc) {
-	notify(exc.get_message() + ": " + exc.what() + ".\n");
-	return false;
-    }
-
-    // update hash lists and fileView
-    if( !isDir ) insert_checked_entry(filePath, size);
-    else {// directory ... do the file tree walk
-	//currentTopEntry = new PathHashEntry(new std::unordered_set<std::string>, 0);
-	int (AlarmFuckFileChooser::*myFunction)(const char *, const struct stat *, int)  = &AlarmFuckFileChooser::traversal_func;
-	ftw( filePath.c_str(), myFunction, 15 );
-
-	std::pair<std::string,PathHashEntry> somePair(filePath, *currentTopEntry);
-	llPathMap.insert(somePair);
-    }
-    return true;
-}
-
-int AlarmFuckFileChooser::traversal_func(const char *fpath, const struct stat *sb, int nopen){
-    // first check permissions
-    switch(sb->st_mode & S_IFMT)
-    {
-	// ordinary file
-	case S_IFREG:
-	    if( access(fpath, W_OK) ) return 0;
-	    break;
-	    // folder
-	case S_IFDIR:
-	    if( access(fpath, W_OK | X_OK) ) return 0;
-	    break;
-
-	default:
-	    return 0;
-
-    }
-    // check if subpath is present already (and delete it if it is)
-    // TODO: refine
-    if(hashMap.count(fpath)){
-	hashMap.erase(std::string(fpath));
-    }
-    // add it
-    if((sb->st_mode & S_IFMT) == S_IFREG){
-	//currentObject->currentTopEntry->subfilesPointer->insert(fpath);
-	//currentObject->currentTopEntry->totalSize += sb->st_size;
-	//currentObject->totalSize += sb->st_size;
-    }
-    return 0;
-}
-
-void AlarmFuckFileChooser::insert_checked_entry(const std::string& filePath, off_t size){
-    Gtk::TreeModel::iterator row = filenameTreeStore->append();
-    (*row)[fileViewColumnRecord.sizeCol] = size;
-    (*row)[fileViewColumnRecord.nameCol] = filePath;
-    // TODO: what is the validity of these iterators later
-    std::pair<std::string,Gtk::TreeStore::iterator> somePair{filePath, row};
-    hashMap.insert(somePair);
-    totalSize += size;
-}
-
-void AlarmFuckFileChooser::erase(Gtk::TreeIter& blob){
-    filenameTreeStore->erase(blob);
-}
-
 void AlarmFuckFileChooser::on_remove_button_clicked()
 {
+    // TODO
     std::vector<Gtk::TreeModel::Path> pathList = (fileView.get_selection())->get_selected_rows();
     Gtk::TreeModel::iterator iter;
     // Didn't find any documentation that reverse deletion is safe, but seems to work
-    for(auto it = pathList.rbegin(); it != pathList.rend(); it++){
-	iter = filenameTreeStore->get_iter(*it);
-	pathHashList->remove_path((*iter)[fileViewColumnRecord.nameCol]);
-    }
+    //for(auto it = pathList.rbegin(); it != pathList.rend(); it++){
+    //    iter = filenameTreeStore->get_iter(*it);
+    //    pathHashList->remove_path((*iter)[fileViewColumnRecord.nameCol]);
+    //}
 }
 
 void AlarmFuckFileChooser::on_import_button_clicked()
 {
+    // TODO
     Gtk::FileChooserDialog dialog("Import from File", Gtk::FILE_CHOOSER_ACTION_OPEN);
     dialog.set_transient_for(*this);
     dialog.add_button("_Cancel", Gtk::RESPONSE_CANCEL);
     dialog.add_button("_Open", Gtk::RESPONSE_OK);
     if(dialog.run() != Gtk::RESPONSE_OK) return;
-    // TODO: test!
     std::cout << "Importing file: " << dialog.get_filename() << std::endl;
-    pathHashList->import_file(dialog.get_filename());
+    //pathHashList->import_file(dialog.get_filename());
 }
 
 void AlarmFuckFileChooser::on_done_button_clicked()
@@ -255,11 +133,4 @@ void AlarmFuckFileChooser::on_done_button_clicked()
 void AlarmFuckFileChooser::notify(const std::string& message){
     infoScroll.show();
     infoTextBuffer->insert(infoTextBuffer->end(), message);
-}
-
-Gtk::TreeModel::iterator AlarmFuckFileChooser::insert_entry(const Glib::ustring& type, off_t size, const std::string& name){
-    Gtk::TreeModel::iterator row = filenameTreeStore->append();
-    (*row)[fileViewColumnRecord.typeCol] = type;
-    (*row)[fileViewColumnRecord.nameCol] = name;
-    return row;
 }

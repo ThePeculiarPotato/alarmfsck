@@ -12,6 +12,10 @@
 #include <gtkmm/textview.h>
 #include <gtkmm/treestore.h>
 #include <unordered_map>
+#define _XOPEN_SOURCE = 666
+extern "C" {
+#include <ftw.h>
+}
 
 class AlarmFuckLauncher;
 
@@ -50,19 +54,30 @@ private:
     std::unordered_map<std::string, Gtk::TreeStore::iterator> hashMap;
 
     // Parent window
-    AlarmFuckLauncher& parentWindow;
+     AlarmFuckLauncher& parentWindow;
 
     off_t totalSize;
     void check_path_prerequisites(const std::string&);
     std::pair<bool, off_t> is_accessible_directory(const std::string&);
-    void insert_checked_entry(const std::string&, off_t);
-    int traversal_func(const char*, const struct stat*, int);
+    void insert_checked_entry(const std::string&, off_t, const bool is_child=false);
+    void populate_row(const Gtk::TreeModel::iterator&, const std::string&, off_t);
+
+    bool import_file(const std::string&);
+
+    // ugly hack to be able to use the C-based ftw (file tree walk) routine
+    // TODO: think about security issues with multiple instances of this class floating around
+    static int traversal_func(const char*, const struct stat*, int, struct FTW*);
+    static AlarmFuckFileChooser * const get_set_first_obj_ptr(AlarmFuckFileChooser* currentObject){
+	static AlarmFuckFileChooser * const eternalObject = currentObject;
+	return eternalObject;
+    }
 public:
     explicit AlarmFuckFileChooser(AlarmFuckLauncher& parent);
     void notify(const std::string&);
     void populate_path_hash_view(std::vector<std::string>);
     bool check_and_add_path(const std::string&);
-    void erase(Gtk::TreeIter&);
+    //void erase(Gtk::TreeIter&);
 };
+
 
 #endif /* end of include guard: ORG_WALRUS_ALARMFUCK_AFFCHOOSER_H */

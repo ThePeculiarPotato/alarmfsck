@@ -1,5 +1,4 @@
 #include "common.h"
-#include "pathhashlist.h"
 #include "aflaunch.h"
 #include <glibmm/regex.h>
 #include <glibmm/spawn.h>
@@ -18,6 +17,7 @@ extern "C" {
 #include <stdlib.h>
 #include <libgen.h>
 #include <sys/types.h>
+#include <bsd/stdlib.h>
 }
 
 AlarmFuckLauncher::AlarmFuckLauncher() :
@@ -33,11 +33,8 @@ AlarmFuckLauncher::AlarmFuckLauncher() :
     inHBox(Gtk::ORIENTATION_HORIZONTAL, 5),
     atHBox(Gtk::ORIENTATION_HORIZONTAL, 5),
     vBox(Gtk::ORIENTATION_VERTICAL, 5),
-    fileChooserWindow(*this),
-    pathHashList(fileChooserWindow),
     updatedFileList(false)
 {
-    fileChooserWindow.set_hash_list(pathHashList);
 
     /* UI setup {{{ */
         // window setup
@@ -194,6 +191,8 @@ void AlarmFuckLauncher::check_good_to_go(){
     }
     else progressBar.hide();
 }
+
+void AlarmFuckLauncher::on_hostage_select_button_click(){AlarmFuckFileChooser::get_instance(*this).show();};
 
 // A bunch of error-message functions
 void AlarmFuckLauncher::error_to_user(const Glib::ustring& appErrMessage, const std::string& sysErrMessage){
