@@ -33,6 +33,7 @@ AlarmFuckLauncher::AlarmFuckLauncher() :
     inHBox(Gtk::ORIENTATION_HORIZONTAL, 5),
     atHBox(Gtk::ORIENTATION_HORIZONTAL, 5),
     vBox(Gtk::ORIENTATION_VERTICAL, 5),
+    fileChooser(*this),
     updatedFileList(false)
 {
 
@@ -182,17 +183,17 @@ void AlarmFuckLauncher::on_hostage_check_box_click(){
 
 void AlarmFuckLauncher::check_good_to_go(){
     bool takingHostages = hostageCheckBox.get_active();
-    okButton.set_sensitive( !takingHostages || !userPathHashList.empty());
-    if(takingHostages && !userPathHashList.empty()){
+    okButton.set_sensitive(!takingHostages || !fileChooser.is_empty());
+    if(takingHostages && !fileChooser.is_empty()){
 	progressBar.show();
 	char* buf = new char[10];
-	humanize_number(buf, 7, userPathHashList.get_size(), "B", HN_AUTOSCALE, 0);
+	humanize_number(buf, 7, fileChooser.get_total_size(), "B", HN_AUTOSCALE, 0);
 	progressBar.set_text("Ready to scramble " + std::string(buf) + " of hostages.");
     }
     else progressBar.hide();
 }
 
-void AlarmFuckLauncher::on_hostage_select_button_click(){AlarmFuckFileChooser::get_instance(*this).show();};
+void AlarmFuckLauncher::on_hostage_select_button_click(){fileChooser.show();};
 
 // A bunch of error-message functions
 void AlarmFuckLauncher::error_to_user(const Glib::ustring& appErrMessage, const std::string& sysErrMessage){

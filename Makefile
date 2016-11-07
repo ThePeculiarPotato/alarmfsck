@@ -44,8 +44,7 @@ $(RINGEROBJ): $(RDEPS)
 $(LAUNCHEROBJ): $(LDEPS)
 
 # header interdependencies
-affilechooser.h: pathhashlist.h
-aflaunch.h: affilechooser.h pathhashlist.h
+aflaunch.h: affilechooser.h
 
 # top-level executables' compilation rules
 $(REXEC): $(RINGEROBJ)

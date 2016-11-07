@@ -62,8 +62,8 @@ AlarmFuckFileChooser::AlarmFuckFileChooser(AlarmFuckLauncher& parent) :
     // fileView
     filenameTreeStore = Gtk::ListStore::create(fileViewColumnRecord);
     fileView.set_model(filenameTreeStore);
-    fileView.append_column("Type", fileViewColumnRecord.typeCol);
     fileView.append_column("Path", fileViewColumnRecord.nameCol);
+    fileView.append_column("Size", fileViewColumnRecord.sizeCol);
     (fileView.get_selection())->set_mode(Gtk::SELECTION_MULTIPLE);
     //fileView.set_rubber_banding(true);
     
@@ -100,31 +100,41 @@ void AlarmFuckFileChooser::populate_path_hash_view(std::vector<std::string> file
 
 void AlarmFuckFileChooser::on_remove_button_clicked()
 {
-    // TODO
-    std::vector<Gtk::TreeModel::Path> pathList = (fileView.get_selection())->get_selected_rows();
+    std::vector<Gtk::TreeModel::Path> treePathList = (fileView.get_selection())->get_selected_rows();
     Gtk::TreeModel::iterator iter;
-    // Didn't find any documentation that reverse deletion is safe, but seems to work
-    //for(auto it = pathList.rbegin(); it != pathList.rend(); it++){
-    //    iter = filenameTreeStore->get_iter(*it);
-    //    pathHashList->remove_path((*iter)[fileViewColumnRecord.nameCol]);
-    //}
+    std::string currFilePath;
+    int count = 0;
+    // TODO: convince yourself this get_iter thing is called right
+    for(auto treePath = treePathList.begin(); treePath != treePathList.end(); treePath++){
+	iter = filenameTreeStore->get_iter(*treePath);
+	currFilePath = (*iter)[fileViewColumnRecord.nameCol];
+	if(hashMap.count(currFilePath) == 0) continue;
+	erase_subtree(iter);
+	filenameTreeStore->erase(iter);
+	count++;
+    }
+    notify("Erased " + std::to_string(count) + " top-level path" + ((count == 1)? "" : "s") + ".");
 }
 
 void AlarmFuckFileChooser::on_import_button_clicked()
 {
-    // TODO
     Gtk::FileChooserDialog dialog("Import from File", Gtk::FILE_CHOOSER_ACTION_OPEN);
     dialog.set_transient_for(*this);
     dialog.add_button("_Cancel", Gtk::RESPONSE_CANCEL);
     dialog.add_button("_Open", Gtk::RESPONSE_OK);
     if(dialog.run() != Gtk::RESPONSE_OK) return;
     std::cout << "Importing file: " << dialog.get_filename() << std::endl;
-    //pathHashList->import_file(dialog.get_filename());
+    try {
+	import_file(dialog.get_filename());
+    } catch (AfUserException& exc) {
+	notify(exc.what());
+    } catch (AfSystemException& exc) {
+	notify(exc.get_message() + ": " + exc.what() + ".\n");
+    }
 }
 
 void AlarmFuckFileChooser::on_done_button_clicked()
 {
-    parentWindow.update_user_hash_list();
     parentWindow.signal_updated_files();
     parentWindow.check_good_to_go();
     hide();

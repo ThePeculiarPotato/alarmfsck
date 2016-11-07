@@ -32,6 +32,7 @@ private:
     Gtk::ComboBox inAtComboBox, timeUnitComboBox;
     Gtk::Entry timeIntervalEntry, timeEntry, dateEntry;
     Glib::DateTime timeStart, timeWakeup;
+    AlarmFuckFileChooser fileChooser;
     bool updatedFileList;
 
     // Drop-down menus
@@ -73,7 +74,6 @@ private:
     void error_to_user(const std::string&);
 public:
     AlarmFuckLauncher();
-    void update_user_hash_list(){userPathHashList = pathHashList;};
     void check_good_to_go();
     void signal_updated_files(){ updatedFileList = true; };
 };
