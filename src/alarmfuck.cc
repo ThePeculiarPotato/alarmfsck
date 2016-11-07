@@ -1,5 +1,5 @@
 #include "alarmfuck.h"
-#include "consts.h"
+#include "common.h"
 #include <iostream>
 #include <fstream>
 #include <canberra-gtk.h>

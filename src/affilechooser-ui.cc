@@ -60,7 +60,7 @@ AlarmFuckFileChooser::AlarmFuckFileChooser(AlarmFuckLauncher& parent) :
 		&AlarmFuckFileChooser::on_done_button_clicked));
     
     // fileView
-    filenameTreeStore = Gtk::ListStore::create(fileViewColumnRecord);
+    filenameTreeStore = Gtk::TreeStore::create(fileViewColumnRecord);
     fileView.set_model(filenameTreeStore);
     fileView.append_column("Path", fileViewColumnRecord.nameCol);
     fileView.append_column("Size", fileViewColumnRecord.sizeCol);
@@ -90,30 +90,43 @@ void AlarmFuckFileChooser::on_add_button_clicked(const std::string& typeStr)
 }
 
 void AlarmFuckFileChooser::populate_path_hash_view(std::vector<std::string> fileList){
+    // <DEBUG>
+    std::cout << "populate_path_hash_view\n";
+    print_tree();
+    // </DEBUG>
     int valid = 0, invalid = 0;
     for(auto it = fileList.begin(); it != fileList.end(); it++){
 	if(check_and_add_path(*it)) valid++;
 	else invalid++;
     }
     notify(std::to_string(valid) + " paths added, " + std::to_string(invalid) + " skipped.\n");
+    if(valid > 0) set_updated(true);
 }
 
 void AlarmFuckFileChooser::on_remove_button_clicked()
 {
+    // this may only be called on top-level entries
     std::vector<Gtk::TreeModel::Path> treePathList = (fileView.get_selection())->get_selected_rows();
     Gtk::TreeModel::iterator iter;
     std::string currFilePath;
     int count = 0;
-    // TODO: convince yourself this get_iter thing is called right
     for(auto treePath = treePathList.begin(); treePath != treePathList.end(); treePath++){
 	iter = filenameTreeStore->get_iter(*treePath);
 	currFilePath = (*iter)[fileViewColumnRecord.nameCol];
+	if(filenameTreeStore->iter_depth(iter) != 0){
+	    notify("Skipping " + currFilePath + ": only top-level entries can be erased\n");
+	    continue;
+	}
+	// if the path has previously been removed
 	if(hashMap.count(currFilePath) == 0) continue;
+	// otherwise
 	erase_subtree(iter);
 	filenameTreeStore->erase(iter);
 	count++;
+	notify("Removed " + currFilePath +"\n");
     }
-    notify("Erased " + std::to_string(count) + " top-level path" + ((count == 1)? "" : "s") + ".");
+    notify("Erased " + std::to_string(count) + " top-level path" + ((count == 1)? "" : "s") + ".\n");
+    if(count > 0) set_updated(true);
 }
 
 void AlarmFuckFileChooser::on_import_button_clicked()
@@ -135,7 +148,6 @@ void AlarmFuckFileChooser::on_import_button_clicked()
 
 void AlarmFuckFileChooser::on_done_button_clicked()
 {
-    parentWindow.signal_updated_files();
     parentWindow.check_good_to_go();
     hide();
 }

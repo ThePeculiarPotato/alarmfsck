@@ -121,7 +121,7 @@ int AlarmFuckFileChooser::traversal_func(const char *fpath, const struct stat *s
 
 void AlarmFuckFileChooser::relocate_subtree(const std::string& filePath){
     // TODO: somehow enforce calling this only when filePath's parent is in the TreeStore?
-    Gtk::TreeModel::iterator& source = hashMap[filePath];
+    Gtk::TreeModel::iterator source = hashMap[filePath];
     const Gtk::TreeModel::iterator& dest = filenameTreeStore->append(hashMap[parent_directory(filePath)]->children());
     move_subtree(source, dest);
     filenameTreeStore->erase(source);
@@ -143,8 +143,9 @@ void AlarmFuckFileChooser::populate_row(const Gtk::TreeModel::iterator& row, con
     // I think it's fine, gtk website seems to say so
     (*row)[fileViewColumnRecord.sizeCol] = size;
     (*row)[fileViewColumnRecord.nameCol] = filePath;
-    std::pair<std::string,Gtk::TreeStore::iterator> somePair{filePath, row};
-    hashMap.insert(somePair);
+    //std::pair<std::string,Gtk::TreeStore::iterator> somePair{filePath, row};
+    //hashMap.insert(somePair);
+    hashMap[filePath] = row;
     totalSize += size;
 }
 
@@ -194,11 +195,42 @@ void AlarmFuckFileChooser::move_subtree(const Gtk::TreeStore::iterator& source, 
     // of this method is finished. Don't forget to do that.
 }
 
+// DEBUG functions
 void AlarmFuckFileChooser::erase_subtree(const Gtk::TreeStore::iterator& top)
 {
     auto& children = top->children();
     for(auto child = children.begin(); child != children.end(); child++)
 	erase_subtree(child);
+    totalSize -= ((*top)[fileViewColumnRecord.sizeCol]);
     hashMap.erase((*top)[fileViewColumnRecord.nameCol]);
     // don't forget to erase top iterator after exiting
+}
+
+std::vector<std::string> AlarmFuckFileChooser::get_top_paths() const{
+    std::vector<std::string> retList;
+    const auto& topLevel = filenameTreeStore->children();
+    for(auto node = topLevel.begin(); node != topLevel.end(); node++)
+	retList.push_back((*node)[fileViewColumnRecord.nameCol]);
+    return retList;
+}
+
+void AlarmFuckFileChooser::print_subtree(int level, const Gtk::TreeModel::iterator& row){
+    const auto& children = row->children();
+    // indentation
+    for(int count = level; count > 0; count--)
+	std::cout << "\t";
+    // print file name
+    std::cout << row->get_value(fileViewColumnRecord.nameCol) << std::endl;
+    //subdirs
+    for(auto child = children.begin(); child != children.end(); child++)
+	print_subtree(level + 1, child);
+}
+
+void AlarmFuckFileChooser::print_tree(){
+    //static int occurrence = 1;
+    //std::cout << "print_tree invocation No. " << occurrence << ":\n";
+    const auto& children = filenameTreeStore->children();
+    for(auto child = children.begin(); child != children.end(); child++)
+	print_subtree(0, child);
+    std::cout << std::endl;
 }

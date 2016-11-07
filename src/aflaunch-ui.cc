@@ -33,74 +33,73 @@ AlarmFuckLauncher::AlarmFuckLauncher() :
     inHBox(Gtk::ORIENTATION_HORIZONTAL, 5),
     atHBox(Gtk::ORIENTATION_HORIZONTAL, 5),
     vBox(Gtk::ORIENTATION_VERTICAL, 5),
-    fileChooser(*this),
-    updatedFileList(false)
+    fileChooser(*this)
 {
 
     /* UI setup {{{ */
-        // window setup
-        set_border_width(padding);
-        set_title("alarmfuck Launcher");
-        set_default_size(380, 150);
-    
-        // Widget setup
-        topHBox.pack_start(wakeMeUpLabel, Gtk::PACK_EXPAND_WIDGET);
-        topHBox.pack_start(inAtComboBox, Gtk::PACK_EXPAND_WIDGET);
-        topHBox.pack_start(inHBox, Gtk::PACK_EXPAND_WIDGET);
-        hostageHBox.pack_start(hostageCheckBox, Gtk::PACK_SHRINK);
-        hostageHBox.pack_start(takeHostagesLabel, Gtk::PACK_SHRINK);
-        hostageHBox.pack_start(hostageSelectButton, Gtk::PACK_SHRINK, 19);
-        bottomButtonHBox.set_layout(Gtk::BUTTONBOX_SPREAD);
-        bottomButtonHBox.set_spacing(40);
-        bottomButtonHBox.add(okButton);
-        bottomButtonHBox.add(cancelButton);
-        vBox.pack_start(topHBox, Gtk::PACK_EXPAND_PADDING);
-        vBox.pack_start(hostageHBox, Gtk::PACK_EXPAND_PADDING);
-        vBox.pack_start(progressBar, Gtk::PACK_EXPAND_PADDING);
-        vBox.pack_start(bottomButtonHBox, Gtk::PACK_EXPAND_PADDING);
-        add(vBox);
-    
-        progressBar.set_show_text(true);
-    
-        timeIntervalEntry.set_text(std::to_string(suggested_hours));
-        timeIntervalEntry.set_alignment(1);
-        timeIntervalEntry.set_width_chars(4);
-    
-        inHBox.pack_start(timeIntervalEntry, Gtk::PACK_EXPAND_PADDING);
-        inHBox.pack_start(timeUnitComboBox, Gtk::PACK_EXPAND_WIDGET);
-    
-        timeStart = Glib::DateTime::create_now_local();
-        timeWakeup = timeStart.add_hours(suggested_hours);
-        timeEntry.set_text(timeWakeup.format("%T"));
-        timeEntry.set_alignment(.5);
-        timeEntry.set_width_chars(8);
-    
-        dateEntry.set_text(timeWakeup.format("%d/%m/%Y"));
-        dateEntry.set_alignment(.5);
-        dateEntry.set_width_chars(8);
-    
-        atHBox.pack_start(timeEntry, Gtk::PACK_EXPAND_PADDING);
-        atHBox.pack_start(onLabel, Gtk::PACK_EXPAND_WIDGET);
-        atHBox.pack_start(dateEntry, Gtk::PACK_EXPAND_PADDING);
-        atHBox.show_all_children();
-        atHBox.show();
-    
-        // Drop-down menus
-        populate_time_unit_combo_box();
-        populate_in_at_combo_box();
-    
-        // associate signal handlers
-        hostageSelectButton.set_sensitive(false);
-        hostageSelectButton.signal_clicked().connect(sigc::mem_fun(*this,
-    		&AlarmFuckLauncher::on_hostage_select_button_click));
-        hostageCheckBox.signal_toggled().connect(sigc::mem_fun(*this,
-    		&AlarmFuckLauncher::on_hostage_check_box_click));
-        okButton.signal_clicked().connect(sigc::mem_fun(*this,
-    		&AlarmFuckLauncher::on_ok_button_click));
-        cancelButton.signal_clicked().connect(sigc::mem_fun(*this,
-    		&Gtk::Widget::hide));
-        inAtComboBox.signal_changed().connect(sigc::mem_fun(*this,
-    		&AlarmFuckLauncher::on_in_at_combo_box_change));
+    // window setup
+    set_border_width(padding);
+    set_title("alarmfuck Launcher");
+    set_default_size(380, 150);
+
+    // Widget setup
+    topHBox.pack_start(wakeMeUpLabel, Gtk::PACK_EXPAND_WIDGET);
+    topHBox.pack_start(inAtComboBox, Gtk::PACK_EXPAND_WIDGET);
+    topHBox.pack_start(inHBox, Gtk::PACK_EXPAND_WIDGET);
+    hostageHBox.pack_start(hostageCheckBox, Gtk::PACK_SHRINK);
+    hostageHBox.pack_start(takeHostagesLabel, Gtk::PACK_SHRINK);
+    hostageHBox.pack_start(hostageSelectButton, Gtk::PACK_SHRINK, 19);
+    bottomButtonHBox.set_layout(Gtk::BUTTONBOX_SPREAD);
+    bottomButtonHBox.set_spacing(40);
+    bottomButtonHBox.add(okButton);
+    bottomButtonHBox.add(cancelButton);
+    vBox.pack_start(topHBox, Gtk::PACK_EXPAND_PADDING);
+    vBox.pack_start(hostageHBox, Gtk::PACK_EXPAND_PADDING);
+    vBox.pack_start(progressBar, Gtk::PACK_EXPAND_PADDING);
+    vBox.pack_start(bottomButtonHBox, Gtk::PACK_EXPAND_PADDING);
+    add(vBox);
+
+    progressBar.set_show_text(true);
+
+    timeIntervalEntry.set_text(std::to_string(suggested_hours));
+    timeIntervalEntry.set_alignment(1);
+    timeIntervalEntry.set_width_chars(4);
+
+    inHBox.pack_start(timeIntervalEntry, Gtk::PACK_EXPAND_PADDING);
+    inHBox.pack_start(timeUnitComboBox, Gtk::PACK_EXPAND_WIDGET);
+
+    timeStart = Glib::DateTime::create_now_local();
+    timeWakeup = timeStart.add_hours(suggested_hours);
+    timeEntry.set_text(timeWakeup.format("%T"));
+    timeEntry.set_alignment(.5);
+    timeEntry.set_width_chars(8);
+
+    dateEntry.set_text(timeWakeup.format("%d/%m/%Y"));
+    dateEntry.set_alignment(.5);
+    dateEntry.set_width_chars(8);
+
+    atHBox.pack_start(timeEntry, Gtk::PACK_EXPAND_PADDING);
+    atHBox.pack_start(onLabel, Gtk::PACK_EXPAND_WIDGET);
+    atHBox.pack_start(dateEntry, Gtk::PACK_EXPAND_PADDING);
+    atHBox.show_all_children();
+    atHBox.show();
+
+    // Drop-down menus
+    populate_time_unit_combo_box();
+    populate_in_at_combo_box();
+
+    // associate signal handlers
+    hostageSelectButton.set_sensitive(false);
+    hostageSelectButton.signal_clicked().connect(sigc::mem_fun(*this,
+	    &AlarmFuckLauncher::on_hostage_select_button_click));
+    hostageCheckBox.signal_toggled().connect(sigc::mem_fun(*this,
+	    &AlarmFuckLauncher::on_hostage_check_box_click));
+    okButton.signal_clicked().connect(sigc::mem_fun(*this,
+	    &AlarmFuckLauncher::on_ok_button_click));
+    cancelButton.signal_clicked().connect(sigc::mem_fun(*this,
+	    &Gtk::Widget::hide));
+    inAtComboBox.signal_changed().connect(sigc::mem_fun(*this,
+	    &AlarmFuckLauncher::on_in_at_combo_box_change));
     /* }}} UI setup */
 
     // show all
@@ -127,6 +126,7 @@ AlarmFuckLauncher::AlarmFuckLauncher() :
     }
     fullHostageFilePath = baseDir + data_dir + hostage_file;
     check_hostage_file();
+    fileChooser.set_updated(false);
 }
 
 void AlarmFuckLauncher::populate_in_at_combo_box()

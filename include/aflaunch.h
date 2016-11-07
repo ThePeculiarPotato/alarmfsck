@@ -33,7 +33,6 @@ private:
     Gtk::Entry timeIntervalEntry, timeEntry, dateEntry;
     Glib::DateTime timeStart, timeWakeup;
     AlarmFuckFileChooser fileChooser;
-    bool updatedFileList;
 
     // Drop-down menus
     class ModelColumns : public Gtk::TreeModelColumnRecord{
@@ -75,7 +74,6 @@ private:
 public:
     AlarmFuckLauncher();
     void check_good_to_go();
-    void signal_updated_files(){ updatedFileList = true; };
 };
 
 #endif // ORG_WALRUS_ALARMFUCK_AFLAUNCH_H

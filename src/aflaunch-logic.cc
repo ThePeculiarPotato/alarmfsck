@@ -42,7 +42,7 @@ void AlarmFuckLauncher::check_hostage_file(){
 
 void AlarmFuckLauncher::write_or_update_hostage_list_file(){
     // Write hostage file, don't update it if it wasn't modified after importing it
-    if(!updatedFileList && access(fullHostageFilePath.c_str(), F_OK) == 0){
+    if(!fileChooser.is_updated() && access(fullHostageFilePath.c_str(), F_OK) == 0){
 	struct stat * statBuf = new struct stat;
 	if(stat(fullHostageFilePath.c_str(), statBuf) != 0){
 	    throw AfSystemException("Could not open existing " + hostage_file);
@@ -62,11 +62,10 @@ void AlarmFuckLauncher::write_hostage_list_file(){
     if(!ofs){
 	throw AfSystemException("Could not open " + hostage_file);
     }
-    const auto& path_map = fileChooser.get_hash_map();
+    const auto& top_paths = fileChooser.get_top_paths();
     // loop over path_map and write out top paths
-    // TODO: function again?
-    for(auto it = path_map.begin(); it != path_map.end(); it++){
-	ofs << it->first << std::endl;
+    for(std::string path : top_paths){
+	ofs << path << std::endl;
     }
     ofs.close();
 }

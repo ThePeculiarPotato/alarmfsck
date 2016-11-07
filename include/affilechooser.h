@@ -10,8 +10,9 @@
 #include <gtkmm/treeview.h>
 #include <gtkmm/textview.h>
 #include <gtkmm/treestore.h>
+#include <sigc++/functors/slot.h>
 #include <unordered_map>
-#define _XOPEN_SOURCE = 666
+//#define _XOPEN_SOURCE = 666
 extern "C" {
 #include <ftw.h>
 }
@@ -62,6 +63,11 @@ private:
     void move_subtree(const Gtk::TreeStore::iterator&, const Gtk::TreeStore::iterator&);
     void relocate_subtree(const std::string&);
     void erase_subtree(const Gtk::TreeStore::iterator&);
+    bool updatedFileList;
+
+    // DEBUG
+    void print_tree();
+    void print_subtree(int level, const Gtk::TreeModel::iterator&);
 
     // ugly hack to be able to use the C-based ftw (file tree walk) routine
     // TODO: think about security issues with multiple instances of this class floating around
@@ -76,12 +82,14 @@ public:
     void populate_path_hash_view(std::vector<std::string>);
     bool check_and_add_path(const std::string&);
     bool is_empty() const {return hashMap.empty();};
+    bool is_updated() const {return updatedFileList;};
+    void set_updated(bool updated_status) {updatedFileList = updated_status;};
     const std::unordered_map<std::string, Gtk::TreeStore::iterator>& get_hash_map() const {return hashMap;};
     off_t get_total_size() const {return totalSize;};
     const ModelColumns& get_column_record() const {return fileViewColumnRecord;};
-    void for_each_file(const Gtk::TreeModel::SlotForeachIter& a) {filenameTreeStore->foreach(a);};
+    std::vector<std::string> get_top_paths() const;
+    void for_each_file(const Gtk::TreeModel::SlotForeachIter& a) {filenameTreeStore->foreach_iter(a);};
     void import_file(const std::string&);
-    //void erase(Gtk::TreeIter&);
 };
 
 #endif /* end of include guard: ORG_WALRUS_ALARMFUCK_AFFCHOOSER_H */

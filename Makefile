@@ -20,7 +20,7 @@ HEXEC = $(BINDIR)/hibernator
 
 # headers upon which top-level programs depend
 RDEPS = alarmfuck.h loopplayworker.h common.h
-LDEPS = aflaunch.h consts.h affilechooser.h
+LDEPS = aflaunch.h common.h affilechooser.h
 
 # object files comprising the top-level programs
 RINGEROBJ = alarmfuck.o
