@@ -2,6 +2,7 @@
 #define ORG_WALRUS_ALARMFUCK_COMMON_H
 
 #include <cerrno>
+#include <cstdio>
 #include <system_error>
 
 const int padding = 10;
@@ -34,5 +35,7 @@ class AfUserException : public std::logic_error
 public:
     AfUserException(std::string message): logic_error(message){};
 };
+
+void erase_file(const std::string&);
 
 #endif // ORG_WALRUS_ALARMFUCK_COMMON_H

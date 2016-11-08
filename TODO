@@ -1,8 +1,13 @@
-- implement errno-inspired but exception-throwing error handling
-- figure out why the affilechooser uses a PathHashList _pointer_, change to a
-  smart pointer
+- continue refactoring the ringer executable
 - encrypt them files
-- allow for a 'debug' switch that doesn't delete the original files - libreadline?
-- save archives in user's home directory, scan the usual places for it
 - allow control over shredding procedure
-- port it to autoconf
+- but allow for a 'debug' switch that doesn't delete the original files - libreadline?
+- modify display of the TreeView
+    - don't display full paths for children, just file/directory names
+    - humanize size numbers (potentially show them added up for dirs)
+- address the smaller TODOs in the code
+- save archives in user's home directory, scan the usual places for it
+- can the pointer in the static trick be made a smart one?
+- figure out the license
+- set an icon
+- port to autoconf

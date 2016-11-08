@@ -298,17 +298,11 @@ going to be. And don't forget to turn up your speakers if you still want to do t
 
     // perform all the checks
     try {
-	std::cout << "before_check\n";
 	write_or_update_hostage_list_file();
-	std::cout << "after write_or_update_hostage_list_file\n";
 	write_hostage_archive();
-	std::cout << "after write_hostage_archive\n";
 	write_compressed_hostage_archive();
-	std::cout << "after write_compressed_hostage_archive\n";
 	erase_original_hostages();
-	std::cout << "after erase_original_hostages\n";
 	perform_rtc_check();
-	std::cout << "after perform_rtc_check\n";
     } catch(AfSystemException& error){
 	error_to_user(error);
     }

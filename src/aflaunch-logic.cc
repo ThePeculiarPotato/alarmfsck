@@ -30,6 +30,13 @@ std::string cpp_realpath(const std::string& raw_path){
     return std::string(pathCand) + file_delim;
 }
 
+void erase_file(const std::string& filename){
+    // TODO: for now this just rm's a file, later add an option to shred it
+    if(std::remove(filename.c_str()) == -1){
+	throw AfSystemException("Error removing " + filename);
+    }
+}
+
 void AlarmFuckLauncher::check_hostage_file(){
     try {
 	fileChooser.import_file(fullHostageFilePath);
@@ -77,13 +84,6 @@ void AlarmFuckLauncher::add_path_to_archive(TAR * tarStrucPtr, const std::string
     }
 }
 
-void AlarmFuckLauncher::erase_file(const std::string& filename){
-    // TODO: for now this just rm's a file, later add an option to shred it
-    if(std::remove(filename.c_str()) == -1){
-	throw AfSystemException("Error removing " + filename);
-    }
-}
-
 void AlarmFuckLauncher::write_hostage_archive(){
     double currentSize = 0, totalSize = fileChooser.get_total_size();
     TAR *tarStrucPtr = new TAR;
@@ -100,54 +100,22 @@ void AlarmFuckLauncher::write_hostage_archive(){
 	progressBar.set_fraction(currentSize/totalSize);
 	return false;
     });
-    //auto& path_map = userPathHashList.pathHashList;
-    //// double loop over path_map
-    //for(auto it = path_map.begin(); it != path_map.end(); it++){
-    //    // ordinary file
-    //    if(it->second.subfilesPointer == NULL){
-    //        add_path_to_archive(tarGoodPtr,it->first);
-    //    }
-    //    // directory
-    //    else{
-    //        std::unordered_set<std::string>& subPaths = *(it->second.subfilesPointer);
-    //        for(auto it2 = subPaths.begin(); it2 != subPaths.end(); it2++){
-    //    	add_path_to_archive(tarGoodPtr,*it2);
-    //        }
-    //    }
-    //    // update progress bar
-    //    currentSize += it->second.totalSize;
-    //    progressBar.set_fraction(currentSize/totalSize);
-    //}
-    // finalize archive
     if(tar_append_eof(tarStrucPtr) == -1){
 	tar_close(tarStrucPtr);
 	throw AfSystemException("Error finalizing " + hostage_archive);
-	// progressBar.set_fraction(0.0);
     }
-    // close and finish
     tar_close(tarStrucPtr);
 }
 
 void AlarmFuckLauncher::erase_original_hostages(){
-    //std::unordered_map<std::string,PathHashEntry>& path_map = userPathHashList.pathHashList;
-    // double loop over path_map
+    // files in the filesystem
     fileChooser.for_each_file([&](Gtk::TreeModel::iterator row){
 	if (row->children().size()) return false;
 	erase_file((*row)[fileChooser.get_column_record().nameCol]);
 	return false;
     });
-    // TODO: general thingy
-    //for(auto it = path_map.begin(); it != path_map.end(); it++){
-    //    // directory
-    //    if(it->second.subfilesPointer != NULL){
-    //        std::unordered_set<std::string>& subPaths = *(it->second.subfilesPointer);
-    //        for(auto it2 = subPaths.begin(); it2 != subPaths.end(); it2++){
-    //    	erase_file(*it2);
-    //        }
-    //    }
-    //    erase_file(it->first);
-    //}
-    //erase_file(baseDir + data_dir + hostage_archive);
+    // uncompressed archive
+    erase_file(baseDir + data_dir + hostage_archive);
 }
 
 void AlarmFuckLauncher::write_compressed_hostage_archive(){

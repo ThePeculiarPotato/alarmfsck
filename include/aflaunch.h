@@ -66,7 +66,6 @@ private:
     bool perform_rtc_check();
     void write_compressed_hostage_archive();
     void erase_original_hostages();
-    void erase_file(const std::string&);
 
     void error_to_user(const Glib::ustring&, const std::string&);
     void error_to_user(const AfSystemException&);
