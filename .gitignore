@@ -1,0 +1,6 @@
+# git ls-files --others --exclude-from=.git/info/exclude
+*.o
+bin/
+!bin/libboost_iostreams.so.1.62.0
+data/
+!data/genocide.oga
