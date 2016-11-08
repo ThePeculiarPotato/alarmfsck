@@ -106,13 +106,7 @@ AlarmFuckLauncher::AlarmFuckLauncher() :
     show_all_children();
     progressBar.hide();
 
-    /* Currently the data dir is ../data relative to the executable's path.
-     * Later it will search in appropriate subdirectories of /usr/share and
-     * ~.
-     * The temporary ../data approach requires finding the executable path.
-     * This is done non-portably through a system call and /proc/self/exe.
-     * In case of error, the search is done relative to the current
-     * directory. */
+    // TODO: move data files into predefined user/system dirs
     std::string execDir;
     try{execDir = afCommon::get_executable_dir();}
     catch(AfSystemException& error){

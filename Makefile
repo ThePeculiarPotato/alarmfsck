@@ -41,13 +41,13 @@ move: $(REXEC) $(LEXEC) $(HEXEC)
 
 # interdependencies
 common.o: common.h
-alarmfuck.o: alarmfuck.h common.h
+alarmfuck.o: alarmfuck.h
 aflaunch-ui.o aflaunch-logic.o: aflaunch.h common.h
 affilechooser-ui.o: affilechooser.h aflaunch.h common.h
 affilechooser-logic.o: affilechooser.h common.h
 
 aflaunch.h: affilechooser.h
-alarmfuck.h: loopplayworker.h
+alarmfuck.h: loopplayworker.h common.h
 
 # top-level executables' compilation rules
 $(REXEC): alarmfuck.o common.o
