@@ -23,8 +23,8 @@ RDEPS = alarmfuck.h loopplayworker.h common.h
 LDEPS = aflaunch.h common.h affilechooser.h
 
 # object files comprising the top-level programs
-RINGEROBJ = alarmfuck.o
-LAUNCHEROBJ = aflaunch-ui.o aflaunch-logic.o affilechooser-ui.o affilechooser-logic.o
+RINGEROBJ = alarmfuck.o common.o
+LAUNCHEROBJ = aflaunch-ui.o aflaunch-logic.o affilechooser-ui.o affilechooser-logic.o common.o
 
 # all the phony targets
 .PHONY: move all auth clean
@@ -39,18 +39,21 @@ move: $(REXEC) $(LEXEC) $(HEXEC)
 %.o: %.cc
 	$(CXX) -c -o $@ $< $(CFLAGS)
 
-# recompile objects if relevant headers change
-$(RINGEROBJ): $(RDEPS)
-$(LAUNCHEROBJ): $(LDEPS)
+# interdependencies
+common.o: common.h
+alarmfuck.o: alarmfuck.h common.h
+aflaunch-ui.o aflaunch-logic.o: aflaunch.h common.h
+affilechooser-ui.o: affilechooser.h aflaunch.h common.h
+affilechooser-logic.o: affilechooser.h common.h
 
-# header interdependencies
 aflaunch.h: affilechooser.h
+alarmfuck.h: loopplayworker.h
 
 # top-level executables' compilation rules
-$(REXEC): $(RINGEROBJ)
+$(REXEC): alarmfuck.o common.o
 	$(CXX) -o $@ $^ $(CFLAGS) $(LIBS) $(UGLY_SUPPLEMENT_STRING)
 
-$(LEXEC): $(LAUNCHEROBJ)
+$(LEXEC): aflaunch-ui.o aflaunch-logic.o affilechooser-ui.o affilechooser-logic.o common.o
 	$(CXX) -o $@ $^ $(CFLAGS) $(LIBS) $(UGLY_SUPPLEMENT_STRING) -lbsd
 
 $(HEXEC): hibernator.o

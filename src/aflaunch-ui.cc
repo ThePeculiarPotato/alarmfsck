@@ -114,12 +114,12 @@ AlarmFuckLauncher::AlarmFuckLauncher() :
      * In case of error, the search is done relative to the current
      * directory. */
     std::string execDir;
-    try{execDir = get_executable_dir();}
+    try{execDir = afCommon::get_executable_dir();}
     catch(AfSystemException& error){
 	error_to_user(error.get_message() + ": Using current path.", error.what());
 	execDir = "";
     }
-    try{baseDir = cpp_realpath(execDir + "../");}
+    try{baseDir = afCommon::cpp_realpath(execDir + "../");}
     catch(AfSystemException& error){
 	error_to_user(error.get_message() + ": Using ../", error.what());
 	baseDir  = "../";

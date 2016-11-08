@@ -16,27 +16,6 @@ extern "C" {
 #include <sys/types.h>
 }
 
-std::string get_executable_dir(){
-    char exePath[PATH_MAX];
-    ssize_t exePathSize = readlink("/proc/self/exe", exePath, PATH_MAX);
-    if(exePathSize == -1) throw AfSystemException("Cannot determine executable path");
-    exePath[exePathSize] = '\0';
-    return std::string(dirname(exePath)) + file_delim;
-}
-
-std::string cpp_realpath(const std::string& raw_path){
-    char *pathCand = realpath(raw_path.c_str(), NULL);
-    if(pathCand == NULL) throw AfSystemException("Cannot canonicalize path");
-    return std::string(pathCand) + file_delim;
-}
-
-void erase_file(const std::string& filename){
-    // TODO: for now this just rm's a file, later add an option to shred it
-    if(std::remove(filename.c_str()) == -1){
-	throw AfSystemException("Error removing " + filename);
-    }
-}
-
 void AlarmFuckLauncher::check_hostage_file(){
     try {
 	fileChooser.import_file(fullHostageFilePath);
@@ -111,11 +90,11 @@ void AlarmFuckLauncher::erase_original_hostages(){
     // files in the filesystem
     fileChooser.for_each_file([&](Gtk::TreeModel::iterator row){
 	if (row->children().size()) return false;
-	erase_file((*row)[fileChooser.get_column_record().nameCol]);
+	afCommon::erase_file((*row)[fileChooser.get_column_record().nameCol]);
 	return false;
     });
     // uncompressed archive
-    erase_file(baseDir + data_dir + hostage_archive);
+    afCommon::erase_file(baseDir + data_dir + hostage_archive);
 }
 
 void AlarmFuckLauncher::write_compressed_hostage_archive(){

@@ -26,17 +26,20 @@ AlarmFuck::AlarmFuck()
 	set_border_width(10);
 	set_title("Poor Bastard");
 
-	// Signal handler
+	// Signal handlers
 	m_button.signal_clicked().connect(sigc::mem_fun(*this,
 	      &AlarmFuck::on_button_clicked));
-
+	// pressing enter in the answer field
 	answerField.signal_activate().connect(sigc::mem_fun(*this,
 	      &AlarmFuck::on_button_clicked));
-
+	// prevent closing if user hasn't entered correct answer
 	signal_delete_event().connect(sigc::mem_fun(*this,
 	      &AlarmFuck::on_window_delete));
 
 	// Random Stuff
+	/* TODO: figure out a good combination of random numbers such that the
+	user won't reach for a calculator. For example, such that the maximal
+	result can be some value like 8000. Perhaps allow it to be set by user. */
 	Glib::Rand randomGen;
 	randNo1 = randomGen.get_int_range(1, 199);
 	randNo2 = randomGen.get_int_range(1, 199);
@@ -167,18 +170,8 @@ void AlarmFuck::on_button_clicked()
 			return;
 		}
 		// erase the uncompressed archive
-		erase_file(fullHostageArchivePath);
+		afCommon::erase_file(fullHostageArchivePath);
 	}
-}
-
-bool AlarmFuck::erase_file(std::string str){
-	// TODO: write settings to a file and come up with a static function
-	// that takes a settings structure.
-	if(std::remove(str.c_str()) == -1){
-		error_to_user("Error removing " + str);
-		return false;
-	}
-	return true;
 }
 
 bool AlarmFuck::decompress_hostage_archive(){
