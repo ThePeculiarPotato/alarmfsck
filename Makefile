@@ -6,7 +6,7 @@ CXX=g++ -g -Wno-deprecated-declarations
 COMPILE_DEPS=gtkmm-3.0 libcanberra libcanberra-gtk3
 CFLAGS=-I$(IDIR) `pkg-config --cflags $(COMPILE_DEPS)`
 LIBS= `pkg-config --libs $(COMPILE_DEPS)`
-UGLY_SUPPLEMENT_STRING= $(BINDIR)/libboost_iostreams.so.1.61.0 -ltar
+UGLY_SUPPLEMENT_STRING= $(BINDIR)/libboost_iostreams.so.1.62.0 -ltar
 
 # tell make where to look for types of files
 vpath %.h $(IDIR)

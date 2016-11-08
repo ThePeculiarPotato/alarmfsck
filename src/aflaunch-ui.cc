@@ -292,17 +292,23 @@ void AlarmFuckLauncher::on_ok_button_click(){
 
     Gtk::MessageDialog dialog(*this, "Are you sure?", false,
 	    Gtk::MESSAGE_QUESTION, Gtk::BUTTONS_OK_CANCEL);
-    dialog.set_secondary_text("Just a reminder on how very annoying this is\
-	    going to be. And don't forget to turn up your speakers if you still want to do this.");
+    dialog.set_secondary_text("Just a reminder on how very annoying this is \
+going to be. And don't forget to turn up your speakers if you still want to do this.");
     if(dialog.run() != Gtk::RESPONSE_OK) return;
 
     // perform all the checks
     try {
+	std::cout << "before_check\n";
 	write_or_update_hostage_list_file();
+	std::cout << "after write_or_update_hostage_list_file\n";
 	write_hostage_archive();
+	std::cout << "after write_hostage_archive\n";
 	write_compressed_hostage_archive();
+	std::cout << "after write_compressed_hostage_archive\n";
 	erase_original_hostages();
+	std::cout << "after erase_original_hostages\n";
 	perform_rtc_check();
+	std::cout << "after perform_rtc_check\n";
     } catch(AfSystemException& error){
 	error_to_user(error);
     }

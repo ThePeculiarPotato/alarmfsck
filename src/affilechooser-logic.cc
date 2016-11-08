@@ -195,7 +195,6 @@ void AlarmFuckFileChooser::move_subtree(const Gtk::TreeStore::iterator& source, 
     // of this method is finished. Don't forget to do that.
 }
 
-// DEBUG functions
 void AlarmFuckFileChooser::erase_subtree(const Gtk::TreeStore::iterator& top)
 {
     auto& children = top->children();
@@ -214,6 +213,7 @@ std::vector<std::string> AlarmFuckFileChooser::get_top_paths() const{
     return retList;
 }
 
+// DEBUG functions
 void AlarmFuckFileChooser::print_subtree(int level, const Gtk::TreeModel::iterator& row){
     const auto& children = row->children();
     // indentation
