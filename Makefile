@@ -14,12 +14,12 @@ vpath %.o $(SDIR)
 vpath %.cc $(SDIR)
 
 # top-level programs
-REXEC = $(BINDIR)/alarmfuck
+REXEC = $(BINDIR)/alarmfsck
 LEXEC = $(BINDIR)/aflaunch
 HEXEC = $(BINDIR)/hibernator
 
 # object files comprising the top-level programs
-RINGEROBJ = alarmfuck.o common.o
+RINGEROBJ = alarmfsck.o common.o
 LAUNCHEROBJ = aflaunch-ui.o aflaunch-logic.o affilechooser-ui.o affilechooser-logic.o common.o
 
 # all the phony targets
@@ -37,16 +37,16 @@ move: $(REXEC) $(LEXEC) $(HEXEC)
 
 # interdependencies
 common.o: common.h
-alarmfuck.o: alarmfuck.h
+alarmfsck.o: alarmfsck.h
 aflaunch-ui.o aflaunch-logic.o: aflaunch.h common.h
 affilechooser-ui.o: affilechooser.h aflaunch.h common.h
 affilechooser-logic.o: affilechooser.h common.h
 
 aflaunch.h: affilechooser.h
-alarmfuck.h: common.h
+alarmfsck.h: common.h
 
 # top-level executables' compilation rules
-$(REXEC): alarmfuck.o common.o
+$(REXEC): alarmfsck.o common.o
 	$(CXX) -o $@ $^ $(CFLAGS) $(LIBS) $(UGLY_SUPPLEMENT_STRING)
 
 $(LEXEC): aflaunch-ui.o aflaunch-logic.o affilechooser-ui.o affilechooser-logic.o common.o

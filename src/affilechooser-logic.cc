@@ -6,14 +6,14 @@
 
 const char FILE_DELIM = '/';
 
-void AlarmFuckFileChooser::check_path_prerequisites(const std::string& filePath){
+void AlarmFsckFileChooser::check_path_prerequisites(const std::string& filePath){
     // TODO: include file name in messages, remove from higher calling functions
     // check absoluteness and that it's not the whole system
     if(filePath.front() != FILE_DELIM){
 	throw AfUserException("not an absolute path");
     }
     if(filePath == "/"){
-	//TODO: also check whether parent directories of the alarmfuck executables are included in path
+	//TODO: also check whether parent directories of the alarmfsck executables are included in path
 	throw AfUserException("please do not gamble away the whole system");
     }
 
@@ -23,7 +23,7 @@ void AlarmFuckFileChooser::check_path_prerequisites(const std::string& filePath)
     }
 }
 
-std::pair<bool, off_t> AlarmFuckFileChooser::is_accessible_directory(const std::string& filePath){
+std::pair<bool, off_t> AlarmFsckFileChooser::is_accessible_directory(const std::string& filePath){
     int permissionMask;
     bool isDir = false;
     std::unique_ptr<struct stat> statBuf{new struct stat};
@@ -53,7 +53,7 @@ std::pair<bool, off_t> AlarmFuckFileChooser::is_accessible_directory(const std::
 }
 
 
-bool AlarmFuckFileChooser::check_and_add_path(const std::string& filePath)
+bool AlarmFsckFileChooser::check_and_add_path(const std::string& filePath)
 {
     bool isDir = false;
     off_t size = 0;
@@ -73,7 +73,7 @@ bool AlarmFuckFileChooser::check_and_add_path(const std::string& filePath)
     // update hash lists and fileView
     if(!isDir) insert_checked_entry(filePath, size);
     else // directory ... do the file tree walk
-	nftw(filePath.c_str(), &AlarmFuckFileChooser::traversal_func, 15, FTW_ACTIONRETVAL);
+	nftw(filePath.c_str(), &AlarmFsckFileChooser::traversal_func, 15, FTW_ACTIONRETVAL);
     return true;
 }
 
@@ -82,7 +82,7 @@ std::string parent_directory(const std::string& filepath){
     return filepath.substr(0, filepath.rfind(FILE_DELIM));
 }
 
-int AlarmFuckFileChooser::traversal_func(const char *fpath, const struct stat *sb, int typeflag, struct FTW *ftwbuf){
+int AlarmFsckFileChooser::traversal_func(const char *fpath, const struct stat *sb, int typeflag, struct FTW *ftwbuf){
     // first check permissions
     switch(typeflag)
     {
@@ -97,7 +97,7 @@ int AlarmFuckFileChooser::traversal_func(const char *fpath, const struct stat *s
 	default:
 	    return FTW_SKIP_SUBTREE;
     }
-    AlarmFuckFileChooser * const currentObject = get_set_first_obj_ptr(nullptr);
+    AlarmFsckFileChooser * const currentObject = get_set_first_obj_ptr(nullptr);
     auto& hashMap = currentObject->hashMap;
     // base directory action
     if(ftwbuf->level == 0){
@@ -119,7 +119,7 @@ int AlarmFuckFileChooser::traversal_func(const char *fpath, const struct stat *s
     }
 }
 
-void AlarmFuckFileChooser::relocate_subtree(const std::string& filePath){
+void AlarmFsckFileChooser::relocate_subtree(const std::string& filePath){
     // TODO: somehow enforce calling this only when filePath's parent is in the TreeStore?
     Gtk::TreeModel::iterator source = hashMap[filePath];
     const Gtk::TreeModel::iterator& dest = filenameTreeStore->append(hashMap[parent_directory(filePath)]->children());
@@ -127,7 +127,7 @@ void AlarmFuckFileChooser::relocate_subtree(const std::string& filePath){
     filenameTreeStore->erase(source);
 }
 
-void AlarmFuckFileChooser::insert_checked_entry(const std::string& filePath, off_t size, const bool is_child){
+void AlarmFsckFileChooser::insert_checked_entry(const std::string& filePath, off_t size, const bool is_child){
     if(is_child){
 	Gtk::TreeModel::iterator& parentRow = hashMap[parent_directory(filePath)];
 	const Gtk::TreeModel::iterator& row = filenameTreeStore->append(parentRow->children());
@@ -138,7 +138,7 @@ void AlarmFuckFileChooser::insert_checked_entry(const std::string& filePath, off
     }
 }
 
-void AlarmFuckFileChooser::populate_row(const Gtk::TreeModel::iterator& row, const std::string& filePath, off_t size){
+void AlarmFsckFileChooser::populate_row(const Gtk::TreeModel::iterator& row, const std::string& filePath, off_t size){
     // TODO: what is the validity of these iterators later
     // I think it's fine, gtk website seems to say so
     (*row)[fileViewColumnRecord.sizeCol] = size;
@@ -149,7 +149,7 @@ void AlarmFuckFileChooser::populate_row(const Gtk::TreeModel::iterator& row, con
     totalSize += size;
 }
 
-void AlarmFuckFileChooser::import_file(const std::string& fileName){
+void AlarmFsckFileChooser::import_file(const std::string& fileName){
     std::ifstream ifs(fileName);
     if(!ifs)
 	throw AfSystemException("Error importing file " + fileName + ": ");
@@ -174,10 +174,10 @@ void AlarmFuckFileChooser::import_file(const std::string& fileName){
     }
     // populate hashList and fileView
     ifs.close();
-    populate_path_hash_view(fileList);
+    populate_file_view(fileList);
 }
 
-void AlarmFuckFileChooser::move_subtree(const Gtk::TreeStore::iterator& source, const Gtk::TreeStore::iterator& dest)
+void AlarmFsckFileChooser::move_subtree(const Gtk::TreeStore::iterator& source, const Gtk::TreeStore::iterator& dest)
 {
     auto& fvcr = fileViewColumnRecord;
     std::string pathName = source->get_value(fvcr.nameCol);
@@ -195,7 +195,7 @@ void AlarmFuckFileChooser::move_subtree(const Gtk::TreeStore::iterator& source, 
     // of this method is finished. Don't forget to do that.
 }
 
-void AlarmFuckFileChooser::erase_subtree(const Gtk::TreeStore::iterator& top)
+void AlarmFsckFileChooser::erase_subtree(const Gtk::TreeStore::iterator& top)
 {
     auto& children = top->children();
     for(auto child = children.begin(); child != children.end(); child++)
@@ -205,7 +205,7 @@ void AlarmFuckFileChooser::erase_subtree(const Gtk::TreeStore::iterator& top)
     // don't forget to erase top iterator after exiting
 }
 
-std::vector<std::string> AlarmFuckFileChooser::get_top_paths() const{
+std::vector<std::string> AlarmFsckFileChooser::get_top_paths() const{
     std::vector<std::string> retList;
     const auto& topLevel = filenameTreeStore->children();
     for(auto node = topLevel.begin(); node != topLevel.end(); node++)
@@ -214,7 +214,7 @@ std::vector<std::string> AlarmFuckFileChooser::get_top_paths() const{
 }
 
 // DEBUG functions
-void AlarmFuckFileChooser::print_subtree(int level, const Gtk::TreeModel::iterator& row){
+void AlarmFsckFileChooser::print_subtree(int level, const Gtk::TreeModel::iterator& row){
     const auto& children = row->children();
     // indentation
     for(int count = level; count > 0; count--)
@@ -226,7 +226,7 @@ void AlarmFuckFileChooser::print_subtree(int level, const Gtk::TreeModel::iterat
 	print_subtree(level + 1, child);
 }
 
-void AlarmFuckFileChooser::print_tree(){
+void AlarmFsckFileChooser::print_tree(){
     //static int occurrence = 1;
     //std::cout << "print_tree invocation No. " << occurrence << ":\n";
     const auto& children = filenameTreeStore->children();

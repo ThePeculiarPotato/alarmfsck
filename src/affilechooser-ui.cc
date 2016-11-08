@@ -7,7 +7,7 @@
 
 const char FILE_DELIM = '/';
 
-AlarmFuckFileChooser::AlarmFuckFileChooser(AlarmFuckLauncher& parent) :
+AlarmFsckFileChooser::AlarmFsckFileChooser(AlarmFsckLauncher& parent) :
     addFilesButton("Add Files"),
     addFolderButton("Add Folder"),
     removeButton("Remove"),
@@ -47,17 +47,17 @@ AlarmFuckFileChooser::AlarmFuckFileChooser(AlarmFuckLauncher& parent) :
     infoScroll.set_size_request(-1,80);
     
     addFilesButton.signal_clicked().connect(sigc::bind<std::string>(sigc::mem_fun(*this,
-		&AlarmFuckFileChooser::on_add_button_clicked), "File"));
+		&AlarmFsckFileChooser::on_add_button_clicked), "File"));
     addFolderButton.signal_clicked().connect(sigc::bind<std::string>(sigc::mem_fun(*this,
-		&AlarmFuckFileChooser::on_add_button_clicked), "Folder"));
+		&AlarmFsckFileChooser::on_add_button_clicked), "Folder"));
     removeButton.signal_clicked().connect(sigc::mem_fun(*this,
-		&AlarmFuckFileChooser::on_remove_button_clicked));
+		&AlarmFsckFileChooser::on_remove_button_clicked));
     cancelButton.signal_clicked().connect(sigc::mem_fun(*this,
-		&AlarmFuckFileChooser::on_cancel_button_clicked));
+		&AlarmFsckFileChooser::on_cancel_button_clicked));
     importButton.signal_clicked().connect(sigc::mem_fun(*this,
-		&AlarmFuckFileChooser::on_import_button_clicked));
+		&AlarmFsckFileChooser::on_import_button_clicked));
     doneButton.signal_clicked().connect(sigc::mem_fun(*this,
-		&AlarmFuckFileChooser::on_done_button_clicked));
+		&AlarmFsckFileChooser::on_done_button_clicked));
     
     // fileView
     filenameTreeStore = Gtk::TreeStore::create(fileViewColumnRecord);
@@ -76,7 +76,7 @@ AlarmFuckFileChooser::AlarmFuckFileChooser(AlarmFuckLauncher& parent) :
 
 }
 
-void AlarmFuckFileChooser::on_add_button_clicked(const std::string& typeStr)
+void AlarmFsckFileChooser::on_add_button_clicked(const std::string& typeStr)
 {
     Gtk::FileChooserAction fcAction = (typeStr == "File") ? Gtk::FILE_CHOOSER_ACTION_OPEN : Gtk::FILE_CHOOSER_ACTION_SELECT_FOLDER;
     Gtk::FileChooserDialog dialog("Choose " + typeStr + "s to Add", fcAction);
@@ -86,14 +86,10 @@ void AlarmFuckFileChooser::on_add_button_clicked(const std::string& typeStr)
     dialog.add_button("_Open", Gtk::RESPONSE_OK);
     if(dialog.run() != Gtk::RESPONSE_OK) return;
     // Now add selected files to our TreeView
-    populate_path_hash_view(dialog.get_filenames());
+    populate_file_view(dialog.get_filenames());
 }
 
-void AlarmFuckFileChooser::populate_path_hash_view(std::vector<std::string> fileList){
-    // <DEBUG>
-    std::cout << "populate_path_hash_view\n";
-    print_tree();
-    // </DEBUG>
+void AlarmFsckFileChooser::populate_file_view(std::vector<std::string> fileList){
     int valid = 0, invalid = 0;
     for(auto it = fileList.begin(); it != fileList.end(); it++){
 	if(check_and_add_path(*it)) valid++;
@@ -103,7 +99,7 @@ void AlarmFuckFileChooser::populate_path_hash_view(std::vector<std::string> file
     if(valid > 0) set_updated(true);
 }
 
-void AlarmFuckFileChooser::on_remove_button_clicked()
+void AlarmFsckFileChooser::on_remove_button_clicked()
 {
     // this may only be called on top-level entries
     std::vector<Gtk::TreeModel::Path> treePathList = (fileView.get_selection())->get_selected_rows();
@@ -129,7 +125,7 @@ void AlarmFuckFileChooser::on_remove_button_clicked()
     if(count > 0) set_updated(true);
 }
 
-void AlarmFuckFileChooser::on_import_button_clicked()
+void AlarmFsckFileChooser::on_import_button_clicked()
 {
     Gtk::FileChooserDialog dialog("Import from File", Gtk::FILE_CHOOSER_ACTION_OPEN);
     dialog.set_transient_for(*this);
@@ -146,13 +142,13 @@ void AlarmFuckFileChooser::on_import_button_clicked()
     }
 }
 
-void AlarmFuckFileChooser::on_done_button_clicked()
+void AlarmFsckFileChooser::on_done_button_clicked()
 {
     parentWindow.check_good_to_go();
     hide();
 }
 
-void AlarmFuckFileChooser::notify(const std::string& message){
+void AlarmFsckFileChooser::notify(const std::string& message){
     infoScroll.show();
     infoTextBuffer->insert(infoTextBuffer->end(), message);
 }

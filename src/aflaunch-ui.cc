@@ -20,7 +20,7 @@ extern "C" {
 #include <bsd/stdlib.h>
 }
 
-AlarmFuckLauncher::AlarmFuckLauncher() :
+AlarmFsckLauncher::AlarmFsckLauncher() :
     okButton("Go"),
     cancelButton("Cancel"),
     hostageSelectButton("Select Files"),
@@ -39,7 +39,7 @@ AlarmFuckLauncher::AlarmFuckLauncher() :
     /* UI setup {{{ */
     // window setup
     set_border_width(padding);
-    set_title("alarmfuck Launcher");
+    set_title("alarmfsck Launcher");
     set_default_size(380, 150);
 
     // Widget setup
@@ -91,15 +91,15 @@ AlarmFuckLauncher::AlarmFuckLauncher() :
     // associate signal handlers
     hostageSelectButton.set_sensitive(false);
     hostageSelectButton.signal_clicked().connect(sigc::mem_fun(*this,
-	    &AlarmFuckLauncher::on_hostage_select_button_click));
+	    &AlarmFsckLauncher::on_hostage_select_button_click));
     hostageCheckBox.signal_toggled().connect(sigc::mem_fun(*this,
-	    &AlarmFuckLauncher::on_hostage_check_box_click));
+	    &AlarmFsckLauncher::on_hostage_check_box_click));
     okButton.signal_clicked().connect(sigc::mem_fun(*this,
-	    &AlarmFuckLauncher::on_ok_button_click));
+	    &AlarmFsckLauncher::on_ok_button_click));
     cancelButton.signal_clicked().connect(sigc::mem_fun(*this,
 	    &Gtk::Widget::hide));
     inAtComboBox.signal_changed().connect(sigc::mem_fun(*this,
-	    &AlarmFuckLauncher::on_in_at_combo_box_change));
+	    &AlarmFsckLauncher::on_in_at_combo_box_change));
     /* }}} UI setup */
 
     // show all
@@ -123,7 +123,7 @@ AlarmFuckLauncher::AlarmFuckLauncher() :
     fileChooser.set_updated(false);
 }
 
-void AlarmFuckLauncher::populate_in_at_combo_box()
+void AlarmFsckLauncher::populate_in_at_combo_box()
 {
     inAtListStore = Gtk::ListStore::create(inAtColumnRecord);
     inAtComboBox.set_model(inAtListStore);
@@ -138,7 +138,7 @@ void AlarmFuckLauncher::populate_in_at_combo_box()
     inAtComboBox.pack_start(inAtColumnRecord.textCol);
 }
 
-void AlarmFuckLauncher::populate_time_unit_combo_box()
+void AlarmFsckLauncher::populate_time_unit_combo_box()
 {
     timeUnitListStore = Gtk::ListStore::create(timeUnitColumnRecord);
     timeUnitComboBox.set_model(timeUnitListStore);
@@ -156,7 +156,7 @@ void AlarmFuckLauncher::populate_time_unit_combo_box()
     timeUnitComboBox.pack_start(timeUnitColumnRecord.textCol);
 }
 
-void AlarmFuckLauncher::on_in_at_combo_box_change()
+void AlarmFsckLauncher::on_in_at_combo_box_change()
 {
     // kind of unsafe, cause there could be no active ones, but unlikely in
     // this app
@@ -170,12 +170,12 @@ void AlarmFuckLauncher::on_in_at_combo_box_change()
     }
 }
 
-void AlarmFuckLauncher::on_hostage_check_box_click(){
+void AlarmFsckLauncher::on_hostage_check_box_click(){
     hostageSelectButton.set_sensitive(hostageCheckBox.get_active());
     check_good_to_go();
 }
 
-void AlarmFuckLauncher::check_good_to_go(){
+void AlarmFsckLauncher::check_good_to_go(){
     bool takingHostages = hostageCheckBox.get_active();
     okButton.set_sensitive(!takingHostages || !fileChooser.is_empty());
     if(takingHostages && !fileChooser.is_empty()){
@@ -187,10 +187,10 @@ void AlarmFuckLauncher::check_good_to_go(){
     else progressBar.hide();
 }
 
-void AlarmFuckLauncher::on_hostage_select_button_click(){fileChooser.show();};
+void AlarmFsckLauncher::on_hostage_select_button_click(){fileChooser.show();};
 
 // A bunch of error-message functions
-void AlarmFuckLauncher::error_to_user(const Glib::ustring& appErrMessage, const std::string& sysErrMessage){
+void AlarmFsckLauncher::error_to_user(const Glib::ustring& appErrMessage, const std::string& sysErrMessage){
     // sysErrMessage is supposed to come from errno or a similar error mechanism
     if(sysErrMessage.size() > 0)
 	std::cerr << sysErrMessage << "\n\t" << appErrMessage;
@@ -199,15 +199,15 @@ void AlarmFuckLauncher::error_to_user(const Glib::ustring& appErrMessage, const 
     progressBar.set_text(appErrMessage);
 }
 
-void AlarmFuckLauncher::error_to_user(const AfSystemException& error){
+void AlarmFsckLauncher::error_to_user(const AfSystemException& error){
     error_to_user(error.get_message(), error.what());
 }
 
-void AlarmFuckLauncher::error_to_user(const std::string& appErrMessage){
+void AlarmFsckLauncher::error_to_user(const std::string& appErrMessage){
     error_to_user(appErrMessage, "");
 }
 
-bool AlarmFuckLauncher::check_time_entry(){
+bool AlarmFsckLauncher::check_time_entry(){
     // TODO refactor this a bit
     Gtk::TreeModel::iterator iter = inAtComboBox.get_active();
     switch((*iter)[inAtColumnRecord.idCol]){
@@ -281,7 +281,7 @@ bool AlarmFuckLauncher::check_time_entry(){
     return true;
 }
 
-void AlarmFuckLauncher::on_ok_button_click(){
+void AlarmFsckLauncher::on_ok_button_click(){
     if(!check_time_entry()) return;
 
     Gtk::MessageDialog dialog(*this, "Are you sure?", false,
@@ -322,12 +322,12 @@ int main (int argc, char *argv[])
     std::string idString = argv[0];
     size_t lastDashLocation = idString.find_last_of("/");
     idString = idString.substr(lastDashLocation + 1);
-    std::string fullId = "org.walrus.alarmfuck." + idString;
+    std::string fullId = "org.walrus.alarmfsck." + idString;
 
     std::cout << "Started application " << argv[0] << " with app id: " << fullId << std::endl;
     Glib::RefPtr<Gtk::Application> app = Gtk::Application::create(argc, argv, fullId);
 
-    AlarmFuckLauncher afLauncher;
+    AlarmFsckLauncher afLauncher;
 
     //Shows the window and returns when it is closed.
     int ret = app->run(afLauncher);

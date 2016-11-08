@@ -16,7 +16,7 @@ extern "C" {
 #include <sys/types.h>
 }
 
-void AlarmFuckLauncher::check_hostage_file(){
+void AlarmFsckLauncher::check_hostage_file(){
     try {
 	fileChooser.import_file(fullHostageFilePath);
 	hostageCheckBox.set_active();
@@ -26,7 +26,7 @@ void AlarmFuckLauncher::check_hostage_file(){
     }
 }
 
-void AlarmFuckLauncher::write_or_update_hostage_list_file(){
+void AlarmFsckLauncher::write_or_update_hostage_list_file(){
     // Write hostage file, don't update it if it wasn't modified after importing it
     if(!fileChooser.is_updated() && access(fullHostageFilePath.c_str(), F_OK) == 0){
 	struct stat * statBuf = new struct stat;
@@ -42,7 +42,7 @@ void AlarmFuckLauncher::write_or_update_hostage_list_file(){
     }
 }
 
-void AlarmFuckLauncher::write_hostage_list_file(){
+void AlarmFsckLauncher::write_hostage_list_file(){
     progressBar.set_text("Writing hostage list to disk.");
     std::ofstream ofs{fullHostageFilePath};
     if(!ofs){
@@ -56,14 +56,14 @@ void AlarmFuckLauncher::write_hostage_list_file(){
     ofs.close();
 }
 
-void AlarmFuckLauncher::add_path_to_archive(TAR * tarStrucPtr, const std::string& filename){
+void AlarmFsckLauncher::add_path_to_archive(TAR * tarStrucPtr, const std::string& filename){
     const char *fpath = filename.c_str();
     if(tar_append_file(tarStrucPtr, fpath, fpath) == -1){
 	throw AfSystemException("Error adding " + filename + " to archive.");
     }
 }
 
-void AlarmFuckLauncher::write_hostage_archive(){
+void AlarmFsckLauncher::write_hostage_archive(){
     double currentSize = 0, totalSize = fileChooser.get_total_size();
     TAR *tarStrucPtr = new TAR;
     // TODO: if any of these archives exists before it has to be shredded
@@ -86,7 +86,7 @@ void AlarmFuckLauncher::write_hostage_archive(){
     tar_close(tarStrucPtr);
 }
 
-void AlarmFuckLauncher::erase_original_hostages(){
+void AlarmFsckLauncher::erase_original_hostages(){
     // files in the filesystem
     fileChooser.for_each_file([&](Gtk::TreeModel::iterator row){
 	if (row->children().size()) return false;
@@ -97,7 +97,7 @@ void AlarmFuckLauncher::erase_original_hostages(){
     afCommon::erase_file(baseDir + data_dir + hostage_archive);
 }
 
-void AlarmFuckLauncher::write_compressed_hostage_archive(){
+void AlarmFsckLauncher::write_compressed_hostage_archive(){
     // TODO: add error checking
     namespace io = boost::iostreams;
     std::ofstream fileOut(baseDir + data_dir + hostage_compressed, std::ios_base::out | std::ios_base::binary);
@@ -115,7 +115,7 @@ const std::string DEFAULT_RTC_DEVICE	= "/dev/" + DEFAULT_RTC;
 const std::string SYS_WAKEUP_PATH	= "/sys/class/rtc/" + DEFAULT_RTC + "/device/power/wakeup";
 const std::string SYS_POWER_STATE_PATH	= "/sys/power/state";
 
-bool AlarmFuckLauncher::perform_rtc_check(){
+bool AlarmFsckLauncher::perform_rtc_check(){
     //TODO:: throw simpler exceptions in this case
     if(access(DEFAULT_RTC_DEVICE.c_str(), F_OK)){
 	error_to_user("Could not find RTC device");

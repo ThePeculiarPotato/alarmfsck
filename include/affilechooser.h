@@ -1,5 +1,5 @@
-#ifndef ORG_WALRUS_ALARMFUCK_AFFCHOOSER_H
-#define ORG_WALRUS_ALARMFUCK_AFFCHOOSER_H
+#ifndef ORG_WALRUS_ALARMFSCK_AFFCHOOSER_H
+#define ORG_WALRUS_ALARMFSCK_AFFCHOOSER_H
 
 #include <gtkmm/window.h>
 #include <gtkmm/button.h>
@@ -17,9 +17,9 @@ extern "C" {
 #include <ftw.h>
 }
 
-class AlarmFuckLauncher;
+class AlarmFsckLauncher;
 
-class AlarmFuckFileChooser : public Gtk::Window
+class AlarmFsckFileChooser : public Gtk::Window
 {
 
 private:
@@ -53,7 +53,7 @@ private:
     std::unordered_map<std::string, Gtk::TreeStore::iterator> hashMap;
 
     // Parent window
-    AlarmFuckLauncher& parentWindow;
+    AlarmFsckLauncher& parentWindow;
 
     off_t totalSize;
     void check_path_prerequisites(const std::string&);
@@ -72,14 +72,14 @@ private:
     // ugly hack to be able to use the C-based ftw (file tree walk) routine
     // TODO: think about security issues with multiple instances of this class floating around
     static int traversal_func(const char*, const struct stat*, int, struct FTW*);
-    static AlarmFuckFileChooser * const get_set_first_obj_ptr(AlarmFuckFileChooser* currentObject){
-	static AlarmFuckFileChooser * const eternalObject = currentObject;
+    static AlarmFsckFileChooser * const get_set_first_obj_ptr(AlarmFsckFileChooser* currentObject){
+	static AlarmFsckFileChooser * const eternalObject = currentObject;
 	return eternalObject;
     }
 public:
-    explicit AlarmFuckFileChooser(AlarmFuckLauncher& parent);
+    explicit AlarmFsckFileChooser(AlarmFsckLauncher& parent);
     void notify(const std::string&);
-    void populate_path_hash_view(std::vector<std::string>);
+    void populate_file_view(std::vector<std::string>);
     bool check_and_add_path(const std::string&);
     bool is_empty() const {return hashMap.empty();};
     bool is_updated() const {return updatedFileList;};
@@ -92,4 +92,4 @@ public:
     void import_file(const std::string&);
 };
 
-#endif /* end of include guard: ORG_WALRUS_ALARMFUCK_AFFCHOOSER_H */
+#endif /* end of include guard: ORG_WALRUS_ALARMFSCK_AFFCHOOSER_H */

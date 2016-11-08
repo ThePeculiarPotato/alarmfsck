@@ -1,5 +1,5 @@
-#ifndef ORG_WALRUS_ALARMFUCK_ALARMFUCK_H
-#define ORG_WALRUS_ALARMFUCK_ALARMFUCK_H
+#ifndef ORG_WALRUS_ALARMFSCK_ALARMFSCK_H
+#define ORG_WALRUS_ALARMFSCK_ALARMFSCK_H
 
 #include "common.h"
 #include <gtkmm/button.h>
@@ -10,11 +10,11 @@
 #include <glibmm/dispatcher.h>
 #include <canberra-gtk.h>
 
-class AlarmFuck : public Gtk::Window
+class AlarmFsck : public Gtk::Window
 {
 
 public:
-    AlarmFuck();
+    AlarmFsck();
 
 private:
     //Signal handlers:
@@ -31,7 +31,7 @@ private:
     ca_context* canberraContext;
     ca_proplist* canberraProps;
 
-    // thread flags - see comment in alarmfuck.cc on why they're not atomic
+    // thread flags - see comment in alarmfsck.cc on why they're not atomic
     static bool loopFinished;
     static bool stopPlayback;
     // thread tasks
@@ -52,4 +52,4 @@ private:
     gint32 randNo1, randNo2;
 };
 
-#endif // ORG_WALRUS_ALARMFUCK_ALARMFUCK_H
+#endif // ORG_WALRUS_ALARMFSCK_ALARMFSCK_H

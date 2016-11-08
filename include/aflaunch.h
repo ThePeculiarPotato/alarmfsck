@@ -1,5 +1,5 @@
-#ifndef ORG_WALRUS_ALARMFUCK_AFLAUNCH_H
-#define ORG_WALRUS_ALARMFUCK_AFLAUNCH_H
+#ifndef ORG_WALRUS_ALARMFSCK_AFLAUNCH_H
+#define ORG_WALRUS_ALARMFSCK_AFLAUNCH_H
 
 #include "affilechooser.h"
 #include <gtkmm/button.h>
@@ -19,7 +19,7 @@ extern "C" {
 
 class AfSystemException;
 
-class AlarmFuckLauncher : public Gtk::Window
+class AlarmFsckLauncher : public Gtk::Window
 {
 private:
     // General widgets:
@@ -32,7 +32,7 @@ private:
     Gtk::ComboBox inAtComboBox, timeUnitComboBox;
     Gtk::Entry timeIntervalEntry, timeEntry, dateEntry;
     Glib::DateTime timeStart, timeWakeup;
-    AlarmFuckFileChooser fileChooser;
+    AlarmFsckFileChooser fileChooser;
 
     // Drop-down menus
     class ModelColumns : public Gtk::TreeModelColumnRecord{
@@ -71,8 +71,8 @@ private:
     void error_to_user(const AfSystemException&);
     void error_to_user(const std::string&);
 public:
-    AlarmFuckLauncher();
+    AlarmFsckLauncher();
     void check_good_to_go();
 };
 
-#endif // ORG_WALRUS_ALARMFUCK_AFLAUNCH_H
+#endif // ORG_WALRUS_ALARMFSCK_AFLAUNCH_H

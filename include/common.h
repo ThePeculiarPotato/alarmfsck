@@ -1,5 +1,5 @@
-#ifndef ORG_WALRUS_ALARMFUCK_COMMON_H
-#define ORG_WALRUS_ALARMFUCK_COMMON_H
+#ifndef ORG_WALRUS_ALARMFSCK_COMMON_H
+#define ORG_WALRUS_ALARMFSCK_COMMON_H
 
 #include <cerrno>
 #include <system_error>
@@ -38,4 +38,4 @@ namespace afCommon {
     std::string cpp_realpath(const std::string&);
 }
 
-#endif // ORG_WALRUS_ALARMFUCK_COMMON_H
+#endif // ORG_WALRUS_ALARMFSCK_COMMON_H
