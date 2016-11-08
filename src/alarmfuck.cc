@@ -20,6 +20,9 @@ extern "C" {
 #include <boost/iostreams/filter/gzip.hpp>
 #include <boost/iostreams/filtering_streambuf.hpp>
 
+bool AlarmFuck::loopFinished;
+bool AlarmFuck::stopPlayback;
+
 const uint32_t canberra_context_id = 1;
 const auto sleepDuration = std::chrono::milliseconds(100);
 // this class implements some functionality involving two threads modifying a
@@ -32,9 +35,6 @@ const auto sleepDuration = std::chrono::milliseconds(100);
 
 AlarmFuck::AlarmFuck():
     m_button("Fuck Off!"),
-    dispatcher(),
-    worker(),
-    workerThread(0),
     vBox(Gtk::ORIENTATION_VERTICAL, 5)
 {
     set_border_width(10);
@@ -111,6 +111,7 @@ void AlarmFuck::playback_looper(ca_context* canCon, ca_proplist* canProp){
     while(true){
 	if(loopFinished){
 	    if(stopPlayback) break;
+	    loopFinished = false;
 	    ca_context_play_full(canCon, canberra_context_id, canProp,
 		    &AlarmFuck::canberra_callback, nullptr);
 	}
@@ -155,8 +156,7 @@ int parseAnswerString(std::string holly)
 
 void AlarmFuck::on_button_clicked()
 {
-    if(parseAnswerString(answerField.get_text().raw()) != randNo1*randNo2)
-    {
+    if(parseAnswerString(answerField.get_text().raw()) != randNo1*randNo2){
 	commentField.set_text("Wrooong!!!");
 	return;
     }
