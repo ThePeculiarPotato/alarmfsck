@@ -61,7 +61,7 @@ private:
     void write_hostage_list_file();
     void write_or_update_hostage_list_file();
     void write_hostage_archive();
-    void add_path_to_archive(std::unique_ptr<TAR>&,const std::string&);
+    void add_path_to_archive(TAR*,const std::string&);
     bool check_time_entry();
     bool perform_rtc_check();
     void write_compressed_hostage_archive();

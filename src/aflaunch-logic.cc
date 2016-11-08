@@ -70,9 +70,9 @@ void AlarmFuckLauncher::write_hostage_list_file(){
     ofs.close();
 }
 
-void AlarmFuckLauncher::add_path_to_archive(std::unique_ptr<TAR>& tarStrucPtr, const std::string& filename){
+void AlarmFuckLauncher::add_path_to_archive(TAR * tarStrucPtr, const std::string& filename){
     const char *fpath = filename.c_str();
-    if(tar_append_file(tarStrucPtr.get(), fpath, fpath) == -1){
+    if(tar_append_file(tarStrucPtr, fpath, fpath) == -1){
 	throw AfSystemException("Error adding " + filename + " to archive.");
     }
 }
@@ -86,8 +86,7 @@ void AlarmFuckLauncher::erase_file(const std::string& filename){
 
 void AlarmFuckLauncher::write_hostage_archive(){
     double currentSize = 0, totalSize = fileChooser.get_total_size();
-    std::unique_ptr<TAR> tarGoodPtr {new TAR};
-    TAR *tarStrucPtr = tarGoodPtr.get();
+    TAR *tarStrucPtr = new TAR;
     // TODO: if any of these archives exists before it has to be shredded
     // open - the TAR_GNU option is necessary for files with long names
     std::string fullHostageArchivePath = baseDir + data_dir + hostage_archive;
@@ -96,7 +95,7 @@ void AlarmFuckLauncher::write_hostage_archive(){
     }
     fileChooser.for_each_file([&](Gtk::TreeModel::iterator row){
 	if (row->children().size()) return false;
-	add_path_to_archive(tarGoodPtr,(*row)[fileChooser.get_column_record().nameCol]);
+	add_path_to_archive(tarStrucPtr,(*row)[fileChooser.get_column_record().nameCol]);
 	currentSize += (*row)[fileChooser.get_column_record().sizeCol];
 	progressBar.set_fraction(currentSize/totalSize);
 	return false;
