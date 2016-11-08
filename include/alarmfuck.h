@@ -1,7 +1,6 @@
 #ifndef ORG_WALRUS_ALARMFUCK_ALARMFUCK_H
 #define ORG_WALRUS_ALARMFUCK_ALARMFUCK_H
 
-#include "loopplayworker.h"
 #include "common.h"
 #include <gtkmm/button.h>
 #include <gtkmm/window.h>
@@ -16,9 +15,8 @@ class AlarmFuck : public Gtk::Window
 
 public:
     AlarmFuck();
-    void play_sound(LoopPlayWorker*);
 
-protected:
+private:
     //Signal handlers:
     void on_button_clicked();
     bool on_window_delete(GdkEventAny*);
@@ -30,8 +28,15 @@ protected:
     Gtk::Entry answerField;
 
     // canberra-related
-    ca_context* context;
-    ca_proplist* props;
+    ca_context* canberraContext;
+    ca_proplist* canberraProps;
+
+    // thread flags - see comment in alarmfuck.cc on why they're not atomic
+    static bool loopFinished;
+    static bool stopPlayback;
+    // thread tasks
+    static void playback_looper(ca_context* canCon, ca_proplist* canProp);
+    static void canberra_callback(ca_context *, uint32_t, int, void *);
 
     // file-tree
     std::string baseDir;
@@ -43,11 +48,7 @@ protected:
     void error_to_user(const std::string&);
     bool erase_file(std::string);
 
-    //Multithreading
-    Glib::Dispatcher dispatcher;
-    LoopPlayWorker worker;
-    Glib::Threads::Thread* workerThread;
-private:
+    // rands
     gint32 randNo1, randNo2;
 };
 

@@ -18,10 +18,6 @@ REXEC = $(BINDIR)/alarmfuck
 LEXEC = $(BINDIR)/aflaunch
 HEXEC = $(BINDIR)/hibernator
 
-# headers upon which top-level programs depend
-RDEPS = alarmfuck.h loopplayworker.h common.h
-LDEPS = aflaunch.h common.h affilechooser.h
-
 # object files comprising the top-level programs
 RINGEROBJ = alarmfuck.o common.o
 LAUNCHEROBJ = aflaunch-ui.o aflaunch-logic.o affilechooser-ui.o affilechooser-logic.o common.o
@@ -47,7 +43,7 @@ affilechooser-ui.o: affilechooser.h aflaunch.h common.h
 affilechooser-logic.o: affilechooser.h common.h
 
 aflaunch.h: affilechooser.h
-alarmfuck.h: loopplayworker.h common.h
+alarmfuck.h: common.h
 
 # top-level executables' compilation rules
 $(REXEC): alarmfuck.o common.o

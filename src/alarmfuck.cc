@@ -2,7 +2,9 @@
 #include "common.h"
 #include <iostream>
 #include <fstream>
-#include <canberra-gtk.h>
+#include <thread>
+#include <chrono>
+#include <functional>
 #include <gtkmm/application.h>
 #include <glibmm/random.h>
 #include <glibmm/timer.h>
@@ -18,10 +20,22 @@ extern "C" {
 #include <boost/iostreams/filter/gzip.hpp>
 #include <boost/iostreams/filtering_streambuf.hpp>
 
-#define CONTEXT_ID 1
+const uint32_t canberra_context_id = 1;
+const auto sleepDuration = std::chrono::milliseconds(100);
+// this class implements some functionality involving two threads modifying a
+// pair boolean indicator flags. Due to the predictable repeating sequence of
+// checks and assignments these can be and are ordinary non-atomic bools.
+// Should loopFinished evaluate to "false" in the looping thread after the
+// callback thread already initiated setting it to "true", the user need only
+// wait a short interval of length sleepDuration for the intended behaviour to
+// resume.
 
-AlarmFuck::AlarmFuck()
-: m_button("Fuck Off!"), context(NULL), props(NULL), dispatcher(), worker(), workerThread(0), vBox(Gtk::ORIENTATION_VERTICAL, 5)
+AlarmFuck::AlarmFuck():
+    m_button("Fuck Off!"),
+    dispatcher(),
+    worker(),
+    workerThread(0),
+    vBox(Gtk::ORIENTATION_VERTICAL, 5)
 {
     set_border_width(10);
     set_title("Poor Bastard");
@@ -76,19 +90,38 @@ AlarmFuck::AlarmFuck()
     std::string compressedPath = baseDir + data_dir + hostage_compressed;
 
     // Initializes the audio bits
-    ca_context_create(&context);
-    ca_context_set_driver(context, "alsa");
-    ca_proplist_create(&props);
-    ca_proplist_sets(props, CA_PROP_MEDIA_FILENAME, audioPath.c_str());
+    canberraContext = ca_gtk_context_get();
+    // ca_context_set_driver(canberraContext, "alsa");
+    ca_proplist_create(&canberraProps);
+    ca_proplist_sets(canberraProps, CA_PROP_MEDIA_FILENAME, audioPath.c_str());
 
     // TODO: encrypt the hostage archive
+    
     hasHostages = (access(compressedPath.c_str(), F_OK) == 0);
 
     //start the horrible loop
-    workerThread =
-	Glib::Threads::Thread::create(sigc::bind(sigc::mem_fun(worker,
-			&LoopPlayWorker::loopPlay),
-		    this));
+    loopFinished = true;
+    stopPlayback = false;
+
+    std::thread t(playback_looper, std::ref(canberraContext), std::ref(canberraProps));
+    t.detach();
+}
+
+void AlarmFuck::playback_looper(ca_context* canCon, ca_proplist* canProp){
+    while(true){
+	if(loopFinished){
+	    if(stopPlayback) break;
+	    ca_context_play_full(canCon, canberra_context_id, canProp,
+		    &AlarmFuck::canberra_callback, nullptr);
+	}
+	std::this_thread::sleep_for(sleepDuration);
+    }
+}
+
+void AlarmFuck::canberra_callback(ca_context *c, uint32_t id, int error_code, void *userdata){
+    if(error_code != CA_SUCCESS)
+	stopPlayback = true;
+    loopFinished = true;
 }
 
 // A bunch of error-message functions
@@ -107,21 +140,6 @@ void AlarmFuck::error_to_user(const AfSystemException& error){
 
 void AlarmFuck::error_to_user(const std::string& appErrMessage){
     error_to_user(appErrMessage, "");
-}
-
-void playbackFinishedCallback(ca_context* c, uint32_t id, int error_code, void *mutexHolder)
-{
-    // Some horrible pointer notation. Synchronizes and sets the loop
-    // finished indicator to signal the worker thread to initiate another
-    // loop.
-    Glib::Threads::Mutex::Lock lock(*(((LoopPlayWorker*)mutexHolder)->getMutex()));
-    ((LoopPlayWorker*)mutexHolder)->signalLoopFinish();
-}
-
-void AlarmFuck::play_sound(LoopPlayWorker* mutexHolder)
-{
-    int errorCode = ca_context_play_full(context, CONTEXT_ID, props, &playbackFinishedCallback, mutexHolder);
-    if (errorCode < 0) puts( ca_strerror( errorCode ) );
 }
 
 int parseAnswerString(std::string holly)
@@ -144,14 +162,9 @@ void AlarmFuck::on_button_clicked()
     }
     commentField.set_text("Whoa, you did it.");
     // Cancel the playback
-    Glib::Threads::Mutex::Lock lock(*(worker.getMutex()));
-    bool hasFinishedLoop = worker.hasFinishedLoop();
-    worker.signalStopPlayback();
-    lock.release();
-    if(!hasFinishedLoop){
-	int errorCode = ca_context_cancel(context, CONTEXT_ID);
-	if (errorCode < 0) puts( ca_strerror( errorCode ) );
-    }
+    int errorCode = ca_context_cancel(canberraContext, canberra_context_id);
+    if (errorCode < 0)
+	std::cout << ca_strerror(errorCode);
     if(hasHostages){
 	try {
 	    decompress_hostage_archive();
@@ -201,34 +214,6 @@ bool AlarmFuck::on_window_delete(GdkEventAny* event)
 	return true;
     }
     return on_delete_event(event);
-}
-
-void LoopPlayWorker::loopPlay(AlarmFuck* caller)
-{
-    Glib::Threads::Mutex::Lock lock(*getMutex(), Glib::Threads::NOT_LOCK);
-    // keep looping and playing the sample until someone presses the button
-    while(true)
-    {
-	lock.acquire();
-	if(stop_playback){
-	    lock.release();
-	    break;
-	}
-	finished_loop = false;
-	lock.release();
-	caller->play_sound(this);
-	// only play the sample again once it's finished, as signalled
-	// by the canberra callback method
-	while(true){
-	    Glib::usleep(100000);
-	    lock.acquire();
-	    if(finished_loop || stop_playback){
-		lock.release();
-		break;
-	    }
-	    lock.release();
-	}
-    }
 }
 
 int main (int argc, char *argv[])
