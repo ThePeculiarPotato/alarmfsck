@@ -9,6 +9,7 @@
 #include <gtkmm/entry.h>
 #include <glibmm/dispatcher.h>
 #include <canberra-gtk.h>
+#include <cryptopp/osrng.h>
 
 class AlarmFsck : public Gtk::Window
 {
@@ -38,10 +39,18 @@ private:
     static void playback_looper(ca_context* canCon, ca_proplist* canProp);
     static void canberra_callback(ca_context *, uint32_t, int, void *);
 
+    // encryption
+    CryptoPP::SecByteBlock key, iv;
+    CryptoPP::AutoSeededRandomPool rng;
+
     // file-tree
-    std::string baseDir;
+    std::string prefixDir;
+    std::string compressedPath;
+    std::string encryptedPath;
     bool hasHostages;
-    bool decompress_hostage_archive();
+    void decompress_hostage_archive();
+    void encrypt_hostage_archive();
+    void decrypt_hostage_archive();
     void free_hostages(const std::string&);
     void error_to_user(const std::string&, const std::string&);
     void error_to_user(const AfSystemException& error);

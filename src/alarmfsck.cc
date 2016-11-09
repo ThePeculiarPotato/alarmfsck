@@ -19,6 +19,9 @@ extern "C" {
 #include <boost/iostreams/copy.hpp>
 #include <boost/iostreams/filter/gzip.hpp>
 #include <boost/iostreams/filtering_streambuf.hpp>
+#include <cryptopp/filters.h>
+#include <cryptopp/modes.h>
+#include <cryptopp/files.h>
 
 bool AlarmFsck::loopFinished;
 bool AlarmFsck::stopPlayback;
@@ -35,6 +38,8 @@ const auto sleepDuration = std::chrono::milliseconds(100);
 
 AlarmFsck::AlarmFsck():
     m_button("Fsck Off!"),
+    key(CryptoPP::AES::DEFAULT_KEYLENGTH),
+    iv(CryptoPP::AES::BLOCKSIZE),
     vBox(Gtk::ORIENTATION_VERTICAL, 5)
 {
     set_border_width(10);
@@ -76,6 +81,7 @@ AlarmFsck::AlarmFsck():
 
     // TODO: move data files into predefined user/system dirs
     std::string execDir;
+    std::string baseDir;
     try{execDir = afCommon::get_executable_dir();}
     catch(AfSystemException& error){
 	error_to_user(error.get_message() + ": Using current path.", error.what());
@@ -86,8 +92,10 @@ AlarmFsck::AlarmFsck():
 	error_to_user(error.get_message() + ": Using ../", error.what());
 	baseDir  = "../";
     }
-    std::string audioPath = baseDir + data_dir + audio_file;
-    std::string compressedPath = baseDir + data_dir + hostage_compressed;
+    prefixDir = baseDir + data_dir;
+    compressedPath = prefixDir + hostage_compressed;
+    encryptedPath = prefixDir + hostage_encrypted;
+    std::string audioPath = prefixDir + audio_file;
 
     // Initializes the audio bits
     canberraContext = ca_gtk_context_get();
@@ -95,9 +103,18 @@ AlarmFsck::AlarmFsck():
     ca_proplist_create(&canberraProps);
     ca_proplist_sets(canberraProps, CA_PROP_MEDIA_FILENAME, audioPath.c_str());
 
-    // TODO: encrypt the hostage archive
-    
     hasHostages = (access(compressedPath.c_str(), F_OK) == 0);
+    if(hasHostages){
+	try {encrypt_hostage_archive();}
+	catch (const CryptoPP::Exception& error) {
+	    error_to_user(error.what());
+	    hasHostages = false;
+	}
+	try {afCommon::erase_file(prefixDir + hostage_archive);}
+	catch (const AfSystemException& error){
+	    error_to_user(error.get_message() + ":\nnow, more than ever, is the time to multiply!", error.what());
+	}
+    }
 
     //start the horrible loop
     loopFinished = true;
@@ -129,9 +146,9 @@ void AlarmFsck::canberra_callback(ca_context *c, uint32_t id, int error_code, vo
 void AlarmFsck::error_to_user(const std::string& appErrMessage, const std::string& sysErrMessage){
     // sysErrMessage is supposed to come from errno or a similar error mechanism
     if(sysErrMessage.size() > 0)
-	std::cerr << sysErrMessage << "\n\t" << appErrMessage;
+	std::cerr << sysErrMessage << "\n\t" << appErrMessage << "\n";
     else
-	std::cerr << "\t" << appErrMessage;
+	std::cerr << "\t" << appErrMessage << "\n";
     commentField.set_text(appErrMessage);
 }
 
@@ -167,12 +184,15 @@ void AlarmFsck::on_button_clicked()
 	std::cout << ca_strerror(errorCode);
     if(hasHostages){
 	try {
+	    decrypt_hostage_archive();
 	    decompress_hostage_archive();
-	    std::string fullHostageArchivePath = baseDir + data_dir + hostage_archive;
+	    std::string fullHostageArchivePath = prefixDir + hostage_archive;
 	    free_hostages(fullHostageArchivePath);
 	    // erase the uncompressed archive
 	    afCommon::erase_file(fullHostageArchivePath);
-	} catch (AfSystemException& error) {error_to_user(error);}
+	}
+	catch (AfSystemException& error) {error_to_user(error);}
+	catch (CryptoPP::Exception& error) {error_to_user(error.what());}
     }
 }
 
@@ -192,18 +212,39 @@ void AlarmFsck::free_hostages(const std::string& fullHostageArchivePath){
     tar_close(tarStrucPtr);
 }
 
-bool AlarmFsck::decompress_hostage_archive(){
+void AlarmFsck::decompress_hostage_archive(){
     // TODO: add error checking
     namespace io = boost::iostreams;
-    std::ifstream fileIn(baseDir + data_dir + hostage_compressed, std::ios_base::in | std::ios_base::binary);
+    std::ifstream fileIn(compressedPath, std::ios_base::in | std::ios_base::binary);
     io::filtering_streambuf<io::input> in;
     in.push(io::gzip_decompressor());
     in.push(fileIn);
-    std::ofstream fileOut(baseDir + data_dir + hostage_archive, std::ios_base::out | std::ios_base::binary);
+    std::ofstream fileOut(prefixDir + hostage_archive, std::ios_base::out | std::ios_base::binary);
     io::copy(in, fileOut);
     in.pop();
     fileOut.close();
-    return true;
+}
+
+void AlarmFsck::encrypt_hostage_archive(){
+    using namespace CryptoPP;
+    rng.GenerateBlock(key, key.size());
+    rng.GenerateBlock(iv, iv.size());
+    CBC_Mode<AES>::Encryption enc;
+    FileSource fs(compressedPath.c_str(), true,
+	    new StreamTransformationFilter(enc,
+		new FileSink(encryptedPath.c_str())
+		)
+	    );
+}
+
+void AlarmFsck::decrypt_hostage_archive(){
+    using namespace CryptoPP;
+    CBC_Mode<AES>::Decryption dec;
+    FileSource fs(encryptedPath.c_str(), true,
+	    new StreamTransformationFilter(dec,
+		new FileSink(compressedPath.c_str())
+		)
+	    );
 }
 
 bool AlarmFsck::on_window_delete(GdkEventAny* event)

