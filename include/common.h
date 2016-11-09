@@ -3,6 +3,7 @@
 
 #include <cerrno>
 #include <system_error>
+#include <vector>
 
 const int padding = 10;
 const int suggested_hours = 8;
@@ -37,6 +38,7 @@ namespace afCommon {
     void erase_file(const std::string&);
     std::string get_executable_dir();
     std::string cpp_realpath(const std::string&);
+    std::string humanize_byte_count(const off_t&);
 }
 
 #endif // ORG_WALRUS_ALARMFSCK_COMMON_H

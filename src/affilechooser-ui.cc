@@ -16,6 +16,7 @@ AlarmFsckFileChooser::AlarmFsckFileChooser(AlarmFsckLauncher& parent) :
     cancelButton("Cancel"),
     bottomButtonHBox(Gtk::ORIENTATION_HORIZONTAL),
     vBox(Gtk::ORIENTATION_VERTICAL, 5),
+    totalSize(0),
     parentWindow{parent}
 {
     get_set_first_obj_ptr(this);

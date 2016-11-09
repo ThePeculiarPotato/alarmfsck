@@ -186,9 +186,10 @@ void AlarmFsckLauncher::check_good_to_go(){
     okButton.set_sensitive(!takingHostages || !fileChooser.is_empty());
     if(takingHostages && !fileChooser.is_empty()){
 	progressBar.show();
-	char* buf = new char[10];
-	//humanize_number(buf, 7, fileChooser.get_total_size(), "B", HN_AUTOSCALE, 0);
-	progressBar.set_text("Ready to scramble " + std::to_string(fileChooser.get_total_size()) + " of hostages.");
+	progressBar.set_text("Ready to scramble "
+		//+ afCommon::humanize_byte_count(fileChooser.get_total_size())
+		+ afCommon::humanize_byte_count(fileChooser.get_total_size())
+		+ " of hostages.");
     }
     else progressBar.hide();
 }
