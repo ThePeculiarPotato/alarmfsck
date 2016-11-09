@@ -1,4 +1,5 @@
 - use crypto++'s compression facility, remove boost iostreams
+- write own humanize_number routine to avoid statically linking libbsd
 - allow control over shredding procedure
 - but allow for a 'debug' switch that doesn't delete the original files - libreadline?
 - modify display of the TreeView
