@@ -11,6 +11,7 @@
 - figure out the license
 - set an icon
 - port to autoconf
+- port to boost::filesystem
 
 Wilder future prospects:
 - try writing a gnome extension that disables volume control
