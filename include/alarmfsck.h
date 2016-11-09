@@ -43,11 +43,13 @@ private:
     CryptoPP::SecByteBlock key, iv;
     CryptoPP::AutoSeededRandomPool rng;
 
+    bool hasHostages;
+    bool solvedIt;
+
     // file-tree
     std::string prefixDir;
     std::string compressedPath;
     std::string encryptedPath;
-    bool hasHostages;
     void decompress_hostage_archive();
     void encrypt_hostage_archive();
     void decrypt_hostage_archive();

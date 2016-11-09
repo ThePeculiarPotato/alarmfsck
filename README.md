@@ -14,10 +14,10 @@ DEPENDENCIES
 The following development libraries must be installed on your system for the
 code to compile:
 - gtkmm-3.0
-- libcanberra
 - libcanberra-gtk3
 - libtar
 - libbsd
+- libcrypto++
 - libboost-iostreams
 
 The last of these has not been playing nice with pkg-config so the shared

@@ -1,4 +1,4 @@
-- encrypt them files
+- use crypto++'s compression facility, remove boost iostreams
 - allow control over shredding procedure
 - but allow for a 'debug' switch that doesn't delete the original files - libreadline?
 - modify display of the TreeView

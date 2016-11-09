@@ -38,6 +38,7 @@ const auto sleepDuration = std::chrono::milliseconds(100);
 
 AlarmFsck::AlarmFsck():
     m_button("Fsck Off!"),
+    solvedIt(false),
     key(CryptoPP::AES::DEFAULT_KEYLENGTH),
     iv(CryptoPP::AES::BLOCKSIZE),
     vBox(Gtk::ORIENTATION_VERTICAL, 5)
@@ -110,7 +111,7 @@ AlarmFsck::AlarmFsck():
 	    error_to_user(error.what());
 	    hasHostages = false;
 	}
-	try {afCommon::erase_file(prefixDir + hostage_archive);}
+	try {afCommon::erase_file(compressedPath);}
 	catch (const AfSystemException& error){
 	    error_to_user(error.get_message() + ":\nnow, more than ever, is the time to multiply!", error.what());
 	}
@@ -173,6 +174,7 @@ int parseAnswerString(std::string holly)
 
 void AlarmFsck::on_button_clicked()
 {
+    if(solvedIt) return;
     if(parseAnswerString(answerField.get_text().raw()) != randNo1*randNo2){
 	commentField.set_text("Wrooong!!!");
 	return;
@@ -190,10 +192,12 @@ void AlarmFsck::on_button_clicked()
 	    free_hostages(fullHostageArchivePath);
 	    // erase the uncompressed archive
 	    afCommon::erase_file(fullHostageArchivePath);
+	    hasHostages = false;
 	}
 	catch (AfSystemException& error) {error_to_user(error);}
 	catch (CryptoPP::Exception& error) {error_to_user(error.what());}
     }
+    solvedIt = true;
 }
 
 void AlarmFsck::free_hostages(const std::string& fullHostageArchivePath){
@@ -230,6 +234,7 @@ void AlarmFsck::encrypt_hostage_archive(){
     rng.GenerateBlock(key, key.size());
     rng.GenerateBlock(iv, iv.size());
     CBC_Mode<AES>::Encryption enc;
+    enc.SetKeyWithIV(key, key.size(), iv);
     FileSource fs(compressedPath.c_str(), true,
 	    new StreamTransformationFilter(enc,
 		new FileSink(encryptedPath.c_str())
@@ -240,6 +245,7 @@ void AlarmFsck::encrypt_hostage_archive(){
 void AlarmFsck::decrypt_hostage_archive(){
     using namespace CryptoPP;
     CBC_Mode<AES>::Decryption dec;
+    dec.SetKeyWithIV(key, key.size(), iv);
     FileSource fs(encryptedPath.c_str(), true,
 	    new StreamTransformationFilter(dec,
 		new FileSink(compressedPath.c_str())
@@ -249,8 +255,7 @@ void AlarmFsck::decrypt_hostage_archive(){
 
 bool AlarmFsck::on_window_delete(GdkEventAny* event)
 {
-    if(parseAnswerString(answerField.get_text().raw()) != randNo1*randNo2)
-    {
+    if(!solvedIt){
 	commentField.set_text("Not so fast!!!");
 	return true;
     }
