@@ -1,4 +1,3 @@
-- write own humanize_number routine to avoid statically linking libbsd
 - modify display of the TreeView
     - don't display full paths for children, just file/directory names
     - humanize size numbers (potentially show them added up for dirs?)
