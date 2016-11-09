@@ -50,9 +50,9 @@ private:
     std::string prefixDir;
     std::string compressedPath;
     std::string encryptedPath;
-    void decompress_hostage_archive();
+    std::string archivePath;
     void encrypt_hostage_archive();
-    void decrypt_hostage_archive();
+    void decrypt_decompress_hostage_archive();
     void free_hostages(const std::string&);
     void error_to_user(const std::string&, const std::string&);
     void error_to_user(const AfSystemException& error);

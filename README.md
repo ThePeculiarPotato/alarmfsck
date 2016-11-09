@@ -11,18 +11,12 @@ This is a C++ project utilizing the GTK widget toolkit.
 
 DEPENDENCIES
 
-The following development libraries must be installed on your system for the
-code to compile:
+The following development libraries and their dependencies must be installed on
+your system for the code to compile:
 - gtkmm-3.0
 - libcanberra-gtk3
 - libtar
-- libbsd
 - libcrypto++
-- libboost-iostreams
-
-The last of these has not been playing nice with pkg-config so the shared
-library object has been included and can be found in the bin/ directory. You
-still must have the headers installed.
 
 COMPILING AND RUNNING
 

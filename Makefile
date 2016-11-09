@@ -6,7 +6,6 @@ CXX=g++ -g -Wno-deprecated-declarations
 COMPILE_DEPS=gtkmm-3.0 libcanberra-gtk3 libcrypto++
 CFLAGS=-I$(IDIR) `pkg-config --cflags $(COMPILE_DEPS)`
 LIBS= `pkg-config --libs $(COMPILE_DEPS)`
-UGLY_SUPPLEMENT_STRING= $(BINDIR)/libboost_iostreams.so.1.62.0 -ltar
 
 # tell make where to look for types of files
 vpath %.h $(IDIR)
@@ -47,10 +46,10 @@ alarmfsck.h: common.h
 
 # top-level executables' compilation rules
 $(REXEC): alarmfsck.o common.o
-	$(CXX) -o $@ $^ $(CFLAGS) $(LIBS) $(UGLY_SUPPLEMENT_STRING)
+	$(CXX) -o $@ $^ $(CFLAGS) $(LIBS) -ltar
 
 $(LEXEC): aflaunch-ui.o aflaunch-logic.o affilechooser-ui.o affilechooser-logic.o common.o
-	$(CXX) -o $@ $^ $(CFLAGS) $(LIBS) $(UGLY_SUPPLEMENT_STRING) -lbsd
+	$(CXX) -o $@ $^ $(CFLAGS) $(LIBS) -ltar
 
 $(HEXEC): hibernator.o
 	$(CXX) -o $@ $^

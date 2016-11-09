@@ -85,7 +85,7 @@ public:
     bool is_updated() const {return updatedFileList;};
     void set_updated(bool updated_status) {updatedFileList = updated_status;};
     const std::unordered_map<std::string, Gtk::TreeStore::iterator>& get_hash_map() const {return hashMap;};
-    off_t get_total_size() const {return totalSize;};
+    long get_total_size() const {return totalSize;};
     const ModelColumns& get_column_record() const {return fileViewColumnRecord;};
     std::vector<std::string> get_top_paths() const;
     void for_each_file(const Gtk::TreeModel::SlotForeachIter& a) {filenameTreeStore->foreach_iter(a);};

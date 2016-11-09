@@ -17,8 +17,8 @@ extern "C" {
 #include <stdlib.h>
 #include <libgen.h>
 #include <sys/types.h>
-#include <bsd/stdlib.h>
 }
+#include <cryptopp/cryptlib.h>
 
 AlarmFsckLauncher::AlarmFsckLauncher() :
     okButton("Go"),
@@ -108,6 +108,7 @@ AlarmFsckLauncher::AlarmFsckLauncher() :
 
     // TODO: move data files into predefined user/system dirs
     std::string execDir;
+    std::string baseDir;
     try{execDir = afCommon::get_executable_dir();}
     catch(AfSystemException& error){
 	error_to_user(error.get_message() + ": Using current path.", error.what());
@@ -118,7 +119,12 @@ AlarmFsckLauncher::AlarmFsckLauncher() :
 	error_to_user(error.get_message() + ": Using ../", error.what());
 	baseDir  = "../";
     }
-    fullHostageFilePath = baseDir + data_dir + hostage_file;
+    prefixDir = baseDir + data_dir;
+    binDir = baseDir + bin_dir;
+    hostageFilePath = prefixDir + hostage_file;
+    archivePath = prefixDir + hostage_archive;
+    compressedPath = prefixDir + hostage_compressed;
+
     check_hostage_file();
     fileChooser.set_updated(false);
 }
@@ -181,8 +187,8 @@ void AlarmFsckLauncher::check_good_to_go(){
     if(takingHostages && !fileChooser.is_empty()){
 	progressBar.show();
 	char* buf = new char[10];
-	humanize_number(buf, 7, fileChooser.get_total_size(), "B", HN_AUTOSCALE, 0);
-	progressBar.set_text("Ready to scramble " + std::string(buf) + " of hostages.");
+	//humanize_number(buf, 7, fileChooser.get_total_size(), "B", HN_AUTOSCALE, 0);
+	progressBar.set_text("Ready to scramble " + std::to_string(fileChooser.get_total_size()) + " of hostages.");
     }
     else progressBar.hide();
 }
@@ -193,9 +199,9 @@ void AlarmFsckLauncher::on_hostage_select_button_click(){fileChooser.show();};
 void AlarmFsckLauncher::error_to_user(const Glib::ustring& appErrMessage, const std::string& sysErrMessage){
     // sysErrMessage is supposed to come from errno or a similar error mechanism
     if(sysErrMessage.size() > 0)
-	std::cerr << sysErrMessage << "\n\t" << appErrMessage;
+	std::cerr << appErrMessage << "\n\t" << sysErrMessage;
     else
-	std::cerr << "\t" << appErrMessage;
+	std::cerr << "\t" << appErrMessage << "\n";
     progressBar.set_text(appErrMessage);
 }
 
@@ -297,9 +303,12 @@ going to be. And don't forget to turn up your speakers if you still want to do t
 	write_compressed_hostage_archive();
 	erase_original_hostages();
 	perform_rtc_check();
-    } catch(AfSystemException& error){
+    } catch(const AfSystemException& error){
 	error_to_user(error);
+    } catch(const CryptoPP::Exception& error){
+	error_to_user(error.what());
     }
+
 
     // final time check
     Glib::DateTime finalTimeCheck = Glib::DateTime::create_now_local();
@@ -310,7 +319,7 @@ going to be. And don't forget to turn up your speakers if you still want to do t
     }
 
     // run hibernator and exit
-    std::vector<std::string> args({baseDir + bin_dir + hib_exec,std::to_string(timeWakeup.to_unix())});
+    std::vector<std::string> args({binDir + hib_exec,std::to_string(timeWakeup.to_unix())});
     Glib::spawn_async("",args);
     std::cout << "exiting" << std::endl;
     hide();

@@ -4,9 +4,6 @@
 #include <iostream>
 #include <fstream>
 #include <memory>
-#include <boost/iostreams/copy.hpp>
-#include <boost/iostreams/filter/gzip.hpp>
-#include <boost/iostreams/filtering_streambuf.hpp>
 extern "C" {
 #include <fcntl.h>
 #include <unistd.h>
@@ -15,10 +12,12 @@ extern "C" {
 #include <libgen.h>
 #include <sys/types.h>
 }
+#include <cryptopp/files.h>
+#include <cryptopp/gzip.h>
 
 void AlarmFsckLauncher::check_hostage_file(){
     try {
-	fileChooser.import_file(fullHostageFilePath);
+	fileChooser.import_file(hostageFilePath);
 	hostageCheckBox.set_active();
 	hostageCheckBox.toggled();
     } catch (std::exception) {
@@ -28,9 +27,9 @@ void AlarmFsckLauncher::check_hostage_file(){
 
 void AlarmFsckLauncher::write_or_update_hostage_list_file(){
     // Write hostage file, don't update it if it wasn't modified after importing it
-    if(!fileChooser.is_updated() && access(fullHostageFilePath.c_str(), F_OK) == 0){
+    if(!fileChooser.is_updated() && access(hostageFilePath.c_str(), F_OK) == 0){
 	struct stat * statBuf = new struct stat;
-	if(stat(fullHostageFilePath.c_str(), statBuf) != 0){
+	if(stat(hostageFilePath.c_str(), statBuf) != 0){
 	    throw AfSystemException("Could not open existing " + hostage_file);
 	    return;
 	}
@@ -44,7 +43,7 @@ void AlarmFsckLauncher::write_or_update_hostage_list_file(){
 
 void AlarmFsckLauncher::write_hostage_list_file(){
     progressBar.set_text("Writing hostage list to disk.");
-    std::ofstream ofs{fullHostageFilePath};
+    std::ofstream ofs{hostageFilePath};
     if(!ofs){
 	throw AfSystemException("Could not open " + hostage_file);
     }
@@ -68,8 +67,7 @@ void AlarmFsckLauncher::write_hostage_archive(){
     TAR *tarStrucPtr = new TAR;
     // TODO: if any of these archives exists before it has to be shredded
     // open - the TAR_GNU option is necessary for files with long names
-    std::string fullHostageArchivePath = baseDir + data_dir + hostage_archive;
-    if(tar_open(&tarStrucPtr, fullHostageArchivePath.c_str(), NULL, O_WRONLY | O_CREAT | O_TRUNC, 0755, TAR_GNU) == -1){
+    if(tar_open(&tarStrucPtr, archivePath.c_str(), NULL, O_WRONLY | O_CREAT | O_TRUNC, 0755, TAR_GNU) == -1){
 	throw AfSystemException("Error opening " + hostage_archive);
     }
     fileChooser.for_each_file([&](Gtk::TreeModel::iterator row){
@@ -94,20 +92,15 @@ void AlarmFsckLauncher::erase_original_hostages(){
 	return false;
     });
     // uncompressed archive
-    afCommon::erase_file(baseDir + data_dir + hostage_archive);
+    afCommon::erase_file(archivePath);
 }
 
 void AlarmFsckLauncher::write_compressed_hostage_archive(){
-    // TODO: add error checking
-    namespace io = boost::iostreams;
-    std::ofstream fileOut(baseDir + data_dir + hostage_compressed, std::ios_base::out | std::ios_base::binary);
-    io::filtering_streambuf<io::output> out;
-    out.push(io::gzip_compressor());
-    out.push(fileOut);
-    std::ifstream fileIn(baseDir + data_dir + hostage_archive, std::ios_base::in | std::ios_base::binary);
-    io::copy(fileIn, out);
-    out.pop();
-    fileIn.close();
+    CryptoPP::FileSource fs(archivePath.c_str(), true,
+	    new CryptoPP::Gzip(
+		new CryptoPP::FileSink(compressedPath.c_str())
+		)
+	    );
 }
 
 const std::string DEFAULT_RTC		= "rtc0";

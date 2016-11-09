@@ -46,8 +46,11 @@ private:
     Glib::RefPtr<Gtk::ListStore> timeUnitListStore;
 
     // File paths
-    std::string baseDir;
-    std::string fullHostageFilePath;
+    std::string prefixDir;
+    std::string binDir;
+    std::string hostageFilePath;
+    std::string archivePath;
+    std::string compressedPath;
 
     void on_in_at_combo_box_change();
     void on_hostage_check_box_click();
