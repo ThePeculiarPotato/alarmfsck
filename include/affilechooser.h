@@ -64,12 +64,16 @@ private:
     void relocate_subtree(const std::string&);
     void erase_subtree(const Gtk::TreeStore::iterator&);
     bool updatedFileList;
+    
+    // pretty print
+    void render_humanized_byte_count(Gtk::CellRenderer*, const Gtk::TreeModel::iterator&);
+    void render_short_subpaths(Gtk::CellRenderer*, const Gtk::TreeModel::iterator&);
 
     // DEBUG
     void print_tree();
     void print_subtree(int level, const Gtk::TreeModel::iterator&);
 
-    // ugly hack to be able to use the C-based ftw (file tree walk) routine
+    // a hack to be able to use the C-based ftw (file tree walk) routine
     // TODO: think about security issues with multiple instances of this class floating around
     static int traversal_func(const char*, const struct stat*, int, struct FTW*);
     static AlarmFsckFileChooser * const get_set_first_obj_ptr(AlarmFsckFileChooser* currentObject){

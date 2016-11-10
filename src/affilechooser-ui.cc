@@ -2,6 +2,7 @@
 #include "aflaunch.h"
 #include "common.h"
 #include <gtkmm/filechooserdialog.h>
+#include <gtkmm/cellrenderertext.h>
 #include <iostream>
 #include <cstdlib>
 
@@ -46,6 +47,7 @@ AlarmFsckFileChooser::AlarmFsckFileChooser(AlarmFsckLauncher& parent) :
     infoScroll.add(infoTextView);
     infoScroll.set_policy(Gtk::POLICY_AUTOMATIC, Gtk::POLICY_AUTOMATIC);
     infoScroll.set_size_request(-1,80);
+    // TODO: make this follow new text
     
     addFilesButton.signal_clicked().connect(sigc::bind<std::string>(sigc::mem_fun(*this,
 		&AlarmFsckFileChooser::on_add_button_clicked), "File"));
@@ -60,13 +62,21 @@ AlarmFsckFileChooser::AlarmFsckFileChooser(AlarmFsckLauncher& parent) :
     doneButton.signal_clicked().connect(sigc::mem_fun(*this,
 		&AlarmFsckFileChooser::on_done_button_clicked));
     
-    // fileView
+    // fileView, 
     filenameTreeStore = Gtk::TreeStore::create(fileViewColumnRecord);
     fileView.set_model(filenameTreeStore);
-    fileView.append_column("Path", fileViewColumnRecord.nameCol);
-    fileView.append_column("Size", fileViewColumnRecord.sizeCol);
+
+    // set up columns and their pretty printing
+    int nCols = fileView.append_column("Path", fileViewColumnRecord.nameCol);
+    Gtk::TreeViewColumn* column = fileView.get_column(nCols - 1);
+    column->set_cell_data_func(*(column->get_first_cell()),
+	    sigc::mem_fun(*this, &AlarmFsckFileChooser::render_short_subpaths));
+
+    nCols = fileView.append_column("Size", fileViewColumnRecord.sizeCol);
     (fileView.get_selection())->set_mode(Gtk::SELECTION_MULTIPLE);
-    //fileView.set_rubber_banding(true);
+    column = fileView.get_column(nCols - 1);
+    column->set_cell_data_func(*(column->get_first_cell()),
+	    sigc::mem_fun(*this, &AlarmFsckFileChooser::render_humanized_byte_count));
     
     // textBuffer
     infoTextBuffer = infoTextView.get_buffer();
@@ -75,6 +85,22 @@ AlarmFsckFileChooser::AlarmFsckFileChooser(AlarmFsckLauncher& parent) :
     show_all_children();
     infoScroll.hide();
 
+}
+
+void AlarmFsckFileChooser::render_humanized_byte_count(Gtk::CellRenderer* render, const Gtk::TreeModel::iterator& iter){
+    if(Gtk::CellRendererText* textRend = dynamic_cast<Gtk::CellRendererText*>(render)){
+	textRend->property_text() =
+	    afCommon::humanize_byte_count((*iter)[fileViewColumnRecord.sizeCol]);
+    }
+}
+
+void AlarmFsckFileChooser::render_short_subpaths(Gtk::CellRenderer* render, const Gtk::TreeModel::iterator& iter){
+    // only display the file/directory names for all but the top-level paths, which remain absolute
+    if(Gtk::CellRendererText* textRend = dynamic_cast<Gtk::CellRendererText*>(render)){
+	std::string filePath = (*iter)[fileViewColumnRecord.nameCol];
+	textRend->property_text() = (filenameTreeStore->iter_depth(iter) == 0) ?
+	    filePath : filePath.substr(filePath.rfind(file_delim) + 1);
+    }
 }
 
 void AlarmFsckFileChooser::on_add_button_clicked(const std::string& typeStr)

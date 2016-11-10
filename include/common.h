@@ -15,7 +15,7 @@ const std::string hostage_compressed= "hostages.tar.gz";
 const std::string hostage_encrypted = "hostages.enc";
 const std::string hib_exec= "hibernator";
 const std::string audio_file= "genocide.oga";
-const std::string file_delim= "/";
+const char file_delim= '/';
 
 class AfSystemException : public std::system_error
 {

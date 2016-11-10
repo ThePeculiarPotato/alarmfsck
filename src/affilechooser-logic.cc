@@ -4,12 +4,10 @@
 #include <fstream>
 #include <cstdlib>
 
-const char FILE_DELIM = '/';
-
 void AlarmFsckFileChooser::check_path_prerequisites(const std::string& filePath){
     // TODO: include file name in messages, remove from higher calling functions
     // check absoluteness and that it's not the whole system
-    if(filePath.front() != FILE_DELIM){
+    if(filePath.front() != file_delim){
 	throw AfUserException("not an absolute path");
     }
     if(filePath == "/"){
@@ -78,8 +76,7 @@ bool AlarmFsckFileChooser::check_and_add_path(const std::string& filePath)
 }
 
 std::string parent_directory(const std::string& filepath){
-    // TODO: check paths are not terminated with slashes
-    return filepath.substr(0, filepath.rfind(FILE_DELIM));
+    return filepath.substr(0, filepath.rfind(file_delim));
 }
 
 int AlarmFsckFileChooser::traversal_func(const char *fpath, const struct stat *sb, int typeflag, struct FTW *ftwbuf){

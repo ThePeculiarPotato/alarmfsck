@@ -1,6 +1,4 @@
-- modify display of the TreeView
-    - don't display full paths for children, just file/directory names
-    - humanize size numbers (potentially show them added up for dirs?)
+- display cumulative sizes for directories in TreeView
 - address the smaller TODOs in the code
 - figure out the license
 - save archives in user's home directory, scan the usual places for it
