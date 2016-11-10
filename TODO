@@ -4,12 +4,17 @@
 - save archives in user's home directory, scan the usual places for it
 - allow control over shredding procedure
 - but allow for a 'debug' switch that doesn't delete the original files - libreadline?
+- perhaps shorten top-level TreeView paths with '/home/user' -> '~'
 - can the pointer in the static trick be made a smart one?
 - unit tests?
 - allow people to set their own audio files
 - set an icon
 - port to autoconf
 - port to boost::filesystem
+- extend program to prevent clever users with some really unhealthy sleeping
+  patterns suspending the process and recovering the encryption keys from a
+  memory dump later in the afternoon. Two communicating processes, one is
+  randomly named.
 
 Wilder future prospects:
 - try writing a gnome extension that disables volume control
