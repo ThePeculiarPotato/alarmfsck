@@ -76,7 +76,7 @@ AlarmFsckFileChooser::AlarmFsckFileChooser(AlarmFsckLauncher& parent) :
     (fileView.get_selection())->set_mode(Gtk::SELECTION_MULTIPLE);
     column = fileView.get_column(nCols - 1);
     column->set_cell_data_func(*(column->get_first_cell()),
-	    sigc::mem_fun(*this, &AlarmFsckFileChooser::render_humanized_byte_count));
+	    sigc::mem_fun(*this, &AlarmFsckFileChooser::render_humanized_cumulative_byte_count));
     
     // textBuffer
     infoTextBuffer = infoTextView.get_buffer();
@@ -87,11 +87,24 @@ AlarmFsckFileChooser::AlarmFsckFileChooser(AlarmFsckLauncher& parent) :
 
 }
 
-void AlarmFsckFileChooser::render_humanized_byte_count(Gtk::CellRenderer* render, const Gtk::TreeModel::iterator& iter){
+void AlarmFsckFileChooser::render_humanized_cumulative_byte_count(Gtk::CellRenderer* render, const Gtk::TreeModel::iterator& iter){
     if(Gtk::CellRendererText* textRend = dynamic_cast<Gtk::CellRendererText*>(render)){
-	textRend->property_text() =
-	    afCommon::humanize_byte_count((*iter)[fileViewColumnRecord.sizeCol]);
+	if((*iter)[fileViewColumnRecord.isDir])
+	    textRend->property_text() = "+ " + afCommon::humanize_byte_count(get_cumulative_size(iter));
+	else
+	    textRend->property_text() = afCommon::humanize_byte_count((*iter)[fileViewColumnRecord.sizeCol]);
     }
+}
+
+off_t AlarmFsckFileChooser::get_cumulative_size(const Gtk::TreeModel::iterator& iter){
+    if((*iter)[fileViewColumnRecord.hasCumSize])
+	return (*iter)[fileViewColumnRecord.sizeCol];
+    off_t cumSize = 0;
+    for(auto& child : iter->children())
+	cumSize += get_cumulative_size(child);
+    (*iter)[fileViewColumnRecord.hasCumSize] = true;
+    (*iter)[fileViewColumnRecord.sizeCol] = cumSize;
+    return cumSize;
 }
 
 void AlarmFsckFileChooser::render_short_subpaths(Gtk::CellRenderer* render, const Gtk::TreeModel::iterator& iter){

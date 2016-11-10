@@ -69,8 +69,9 @@ private:
     bool updatedFileList;
     
     // pretty print
-    void render_humanized_byte_count(Gtk::CellRenderer*, const Gtk::TreeModel::iterator&);
+    void render_humanized_cumulative_byte_count(Gtk::CellRenderer*, const Gtk::TreeModel::iterator&);
     void render_short_subpaths(Gtk::CellRenderer*, const Gtk::TreeModel::iterator&);
+    off_t get_cumulative_size(const Gtk::TreeModel::iterator&);
 
     // DEBUG
     void print_tree();
