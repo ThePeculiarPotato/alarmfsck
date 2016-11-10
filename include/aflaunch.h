@@ -52,23 +52,30 @@ private:
     std::string archivePath;
     std::string compressedPath;
 
+    // event handlers
     void on_in_at_combo_box_change();
     void on_hostage_check_box_click();
     void on_hostage_select_button_click();
     void on_ok_button_click();
 
+    // GUI helper funcs
     void populate_in_at_combo_box();
     void populate_time_unit_combo_box();
 
+    // filesystem related
     void check_hostage_file();
     void write_hostage_list_file();
     void write_or_update_hostage_list_file();
     void write_hostage_archive();
     void add_path_to_archive(TAR*,const std::string&);
-    bool check_time_entry();
-    bool perform_rtc_check();
     void write_compressed_hostage_archive();
     void erase_original_hostages();
+
+    // time related
+    bool check_time_entry();
+    bool check_interval_entry();
+    bool check_datetime_entry();
+    void perform_rtc_check();
 
     void error_to_user(const Glib::ustring&, const std::string&);
     void error_to_user(const AfSystemException&);

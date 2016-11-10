@@ -76,7 +76,7 @@ AlarmFsckLauncher::AlarmFsckLauncher() :
 
     dateEntry.set_text(timeWakeup.format("%d/%m/%Y"));
     dateEntry.set_alignment(.5);
-    dateEntry.set_width_chars(8);
+    dateEntry.set_width_chars(10);
 
     atHBox.pack_start(timeEntry, Gtk::PACK_EXPAND_PADDING);
     atHBox.pack_start(onLabel, Gtk::PACK_EXPAND_WIDGET);
@@ -215,76 +215,100 @@ void AlarmFsckLauncher::error_to_user(const std::string& appErrMessage){
 }
 
 bool AlarmFsckLauncher::check_time_entry(){
-    // TODO refactor this a bit
     Gtk::TreeModel::iterator iter = inAtComboBox.get_active();
     switch((*iter)[inAtColumnRecord.idCol]){
 	case 1:
 	    {
-		double interval;
-		try{ interval = stod(timeIntervalEntry.get_text().raw()); }
-		catch(std::exception& e){
-		    progressBar.set_text("Invalid time interval.");
-		    return false;
-		}
-		if(interval <= 0){
-		    progressBar.set_text("Wakeup time must be in the future.");
-		    return false;
-		}
-		int modifier;
-		Gtk::TreeModel::iterator iter2 = timeUnitComboBox.get_active();
-		switch((*iter2)[timeUnitColumnRecord.idCol]){
-		    case 1:
-			modifier = 1;
-			break;
-		    case 2:
-			modifier = 60;
-			break;
-		    case 3:
-			modifier = 3600;
-			break;
-		}
-		Glib::DateTime timeNow = Glib::DateTime::create_now_local();
-		timeWakeup = timeNow.add_seconds(interval*modifier);
+		return check_interval_entry();
 		break;
 	    }
 	case 2:
 	    {
-		Glib::RefPtr<Glib::Regex> timeRegex = Glib::Regex::create("^(\\d{2}):(\\d{2}):(\\d{2})$");
-		Glib::MatchInfo timeMatch;
-		if(!timeRegex->match(timeEntry.get_text(), timeMatch)){
-		    progressBar.set_text("Invalid time format.");
-		    return false;
-		}
-		Glib::RefPtr<Glib::Regex> dateRegex = Glib::Regex::create("^(\\d{2})/(\\d{2})/(\\d{4})$");
-		Glib::MatchInfo dateMatch;
-		if(!dateRegex->match(dateEntry.get_text(), dateMatch)){
-		    // TODO: add options for "today" and "tomorrow"
-		    progressBar.set_text("Invalid date format.");
-		    return false;
-		}
-		// glibmm was either buggy or too clever for me, had to resort
-		// to glib here
-		GDateTime *gPotentialTime = g_date_time_new_local(
-			stoi(dateMatch.fetch(3).raw()),
-			stoi(dateMatch.fetch(2).raw()),
-			stoi(dateMatch.fetch(1).raw()),
-			stoi(timeMatch.fetch(1).raw()),
-			stoi(timeMatch.fetch(2).raw()),
-			stod(timeMatch.fetch(3).raw()));
-		if(gPotentialTime == NULL){
-		    progressBar.set_text("Not a real date.");
-		    return false;
-		}
-		Glib::DateTime potentialTime = Glib::wrap(gPotentialTime);
-		Glib::DateTime timeTwoNow = Glib::DateTime::create_now_local();
-		if( potentialTime.compare(timeTwoNow) <= 0 ){
-		    progressBar.set_text("Wakeup time must be in the future.");
-		    return false;
-		}
-		timeWakeup = potentialTime;
+		return check_datetime_entry();
 		break;
 	    }
     }
+    return true;
+}
+
+bool AlarmFsckLauncher::check_interval_entry(){
+    double interval;
+    try{ interval = stod(timeIntervalEntry.get_text().raw()); }
+    catch(std::exception& e){
+	progressBar.set_text("Invalid time interval.");
+	return false;
+    }
+    if(interval <= 0){
+	progressBar.set_text("Wakeup time must be in the future.");
+	return false;
+    }
+    int modifier;
+    Gtk::TreeModel::iterator iter2 = timeUnitComboBox.get_active();
+    switch((*iter2)[timeUnitColumnRecord.idCol]){
+	case 1:
+	    modifier = 1;
+	    break;
+	case 2:
+	    modifier = 60;
+	    break;
+	case 3:
+	    modifier = 3600;
+	    break;
+    }
+    Glib::DateTime timeNow = Glib::DateTime::create_now_local();
+    timeWakeup = timeNow.add_seconds(interval*modifier);
+    return true;
+}
+
+bool AlarmFsckLauncher::check_datetime_entry(){
+    Glib::DateTime timeNow = Glib::DateTime::create_now_local();
+    Glib::RefPtr<Glib::Regex> timeRegex = Glib::Regex::create("^(\\d{2}):(\\d{2}):(\\d{2})$");
+    Glib::MatchInfo timeMatch;
+    if(!timeRegex->match(timeEntry.get_text(), timeMatch)){
+	progressBar.set_text("Invalid time format.");
+	return false;
+    }
+    Glib::ustring dateString = dateEntry.get_text();
+    Glib::RefPtr<Glib::Regex> dateRegex = Glib::Regex::create("^(\\d{2})/(\\d{2})/(\\d{4})$");
+    Glib::MatchInfo dateMatch;
+    int year, month, day;
+    if(!dateRegex->match(dateString, dateMatch)){
+	// TODO: trim the strings
+	if(dateString == "today"){
+	    year = timeNow.get_year();
+	    month = timeNow.get_month();
+	    day = timeNow.get_day_of_month();
+	} else if (dateString == "tomorrow"){
+	    Glib::DateTime dateTomorrow = timeNow.add_days(1);
+	    year = dateTomorrow.get_year();
+	    month = dateTomorrow.get_month();
+	    day = dateTomorrow.get_day_of_month();
+	} else {
+	    progressBar.set_text("Invalid date format.");
+	    return false;
+	}
+    } else {
+	year = std::stoi(dateMatch.fetch(3).raw());
+	month = std::stoi(dateMatch.fetch(2).raw());
+	day  = std::stoi(dateMatch.fetch(1).raw());
+    }
+    // glibmm was either buggy or too clever for me, had to resort
+    // to glib here
+    GDateTime *gPotentialTime = g_date_time_new_local(
+	    year, month, day,
+	    std::stoi(timeMatch.fetch(1).raw()),
+	    std::stoi(timeMatch.fetch(2).raw()),
+	    std::stod(timeMatch.fetch(3).raw()));
+    if(gPotentialTime == NULL){
+	progressBar.set_text("Not a real point in time.");
+	return false;
+    }
+    Glib::DateTime potentialTime = Glib::wrap(gPotentialTime);
+    if(potentialTime.compare(timeNow) <= 0){
+	progressBar.set_text("Wakeup time must be in the future.");
+	return false;
+    }
+    timeWakeup = potentialTime;
     return true;
 }
 

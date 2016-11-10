@@ -47,7 +47,7 @@ AlarmFsckFileChooser::AlarmFsckFileChooser(AlarmFsckLauncher& parent) :
     infoScroll.add(infoTextView);
     infoScroll.set_policy(Gtk::POLICY_AUTOMATIC, Gtk::POLICY_AUTOMATIC);
     infoScroll.set_size_request(-1,80);
-    // TODO: make this follow new text
+    // TODO: make this autoscroll when new text appears
     
     addFilesButton.signal_clicked().connect(sigc::bind<std::string>(sigc::mem_fun(*this,
 		&AlarmFsckFileChooser::on_add_button_clicked), "File"));

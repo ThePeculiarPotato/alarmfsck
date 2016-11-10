@@ -21,7 +21,8 @@ void AlarmFsckLauncher::check_hostage_file(){
 	hostageCheckBox.set_active();
 	hostageCheckBox.toggled();
     } catch (std::exception) {
-	//TODO handle
+	// no error, just skip it
+	std::cout << "No appropriate hostages file found.";
     }
 }
 
@@ -65,7 +66,6 @@ void AlarmFsckLauncher::add_path_to_archive(TAR * tarStrucPtr, const std::string
 void AlarmFsckLauncher::write_hostage_archive(){
     double currentSize = 0, totalSize = fileChooser.get_total_size();
     TAR *tarStrucPtr = new TAR;
-    // TODO: if any of these archives exists before it has to be shredded
     // open - the TAR_GNU option is necessary for files with long names
     if(tar_open(&tarStrucPtr, archivePath.c_str(), NULL, O_WRONLY | O_CREAT | O_TRUNC, 0755, TAR_GNU) == -1){
 	throw AfSystemException("Error opening " + hostage_archive);
@@ -108,39 +108,31 @@ const std::string DEFAULT_RTC_DEVICE	= "/dev/" + DEFAULT_RTC;
 const std::string SYS_WAKEUP_PATH	= "/sys/class/rtc/" + DEFAULT_RTC + "/device/power/wakeup";
 const std::string SYS_POWER_STATE_PATH	= "/sys/power/state";
 
-bool AlarmFsckLauncher::perform_rtc_check(){
-    //TODO:: throw simpler exceptions in this case
+void AlarmFsckLauncher::perform_rtc_check(){
     if(access(DEFAULT_RTC_DEVICE.c_str(), F_OK)){
-	error_to_user("Could not find RTC device");
-	return false;
+	throw AfUserException("Could not find RTC device");
     }
     std::ifstream ifs(SYS_POWER_STATE_PATH);
     if(!ifs){
-	error_to_user("Could not determine hibernate capability");
-	return false;
+	throw AfSystemException("Could not determine hibernate capability");
     }
     std::string tempString;
     std::getline(ifs, tempString);
     ifs.close();
     if(!ifs){
-	error_to_user("Error closing power state file");
-	return false;
+	throw AfSystemException("Error closing power state file");
     }
 
     if(tempString.find("disk") == std::string::npos){
-	error_to_user("Sorry, system does not support hibernation");
-	return false;
+	throw AfUserException("Sorry, system does not support hibernation");
     }
 
     ifs.open(SYS_WAKEUP_PATH);
     if(!ifs){
-	error_to_user("Sorry, wakeups not enabled");
-	return false;
+	throw AfSystemException("Sorry, wakeups not enabled");
     }
     std::getline(ifs, tempString);
     if(tempString.compare("enabled") != 0){
-	error_to_user("Sorry, wakeups not enabled");
-	return false;
+	throw AfUserException("Sorry, wakeups not enabled");
     }
-    return true;
 }
