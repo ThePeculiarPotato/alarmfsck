@@ -69,7 +69,7 @@ bool AlarmFsckFileChooser::check_and_add_path(const std::string& filePath)
     }
 
     // update hash lists and fileView
-    if(!isDir) insert_checked_entry(filePath, size);
+    if(!isDir) insert_checked_entry(filePath, size, false);
     else // directory ... do the file tree walk
 	nftw(filePath.c_str(), &AlarmFsckFileChooser::traversal_func, 15, FTW_ACTIONRETVAL);
     return true;
@@ -81,15 +81,18 @@ std::string parent_directory(const std::string& filepath){
 
 int AlarmFsckFileChooser::traversal_func(const char *fpath, const struct stat *sb, int typeflag, struct FTW *ftwbuf){
     // first check permissions
+    bool isDir;
     switch(typeflag)
     {
 	// ordinary file
 	case FTW_F:
 	    if(access(fpath, W_OK)) return FTW_CONTINUE;
+	    isDir = false;
 	    break;
 	// folder
 	case FTW_D:
 	    if(access(fpath, W_OK | X_OK)) return FTW_SKIP_SUBTREE;
+	    isDir = true;
 	    break;
 	default:
 	    return FTW_SKIP_SUBTREE;
@@ -101,7 +104,7 @@ int AlarmFsckFileChooser::traversal_func(const char *fpath, const struct stat *s
 	if(hashMap.count(std::string(fpath)))
 	    // something went wrong. exit
 	    return FTW_STOP;
-	currentObject->insert_checked_entry(fpath, sb->st_size);
+	currentObject->insert_checked_entry(fpath, sb->st_size, isDir);
 	return FTW_CONTINUE;
     }
     // lower subdirectories
@@ -111,39 +114,76 @@ int AlarmFsckFileChooser::traversal_func(const char *fpath, const struct stat *s
 	currentObject->relocate_subtree(fpath);
 	return FTW_SKIP_SUBTREE;
     } else {
-	currentObject->insert_checked_entry(fpath, sb->st_size, true);
+	currentObject->insert_checked_entry(fpath, sb->st_size, isDir, true);
 	return FTW_CONTINUE;
     }
 }
 
 void AlarmFsckFileChooser::relocate_subtree(const std::string& filePath){
-    // TODO: somehow enforce calling this only when filePath's parent is in the TreeStore?
+    // an entry point function for the recursive move_subtree
+    // should only be called when filePath and its parent are in the TreeStore
     Gtk::TreeModel::iterator source = hashMap[filePath];
     const Gtk::TreeModel::iterator& dest = filenameTreeStore->append(hashMap[parent_directory(filePath)]->children());
     move_subtree(source, dest);
     filenameTreeStore->erase(source);
 }
 
-void AlarmFsckFileChooser::insert_checked_entry(const std::string& filePath, off_t size, const bool is_child){
+void AlarmFsckFileChooser::move_subtree(const Gtk::TreeStore::iterator& source, const Gtk::TreeStore::iterator& dest)
+{
+    auto& fvcr = fileViewColumnRecord;
+    // first copy the base nodes. TreeIter/TreeRow do not seem to have a satisfactory copy constructor, so use helper func.
+    std::string pathName = copy_row(source, dest);
+    // and then recursively the children
+    auto& sourceChildren = source->children();
+    for(auto child = sourceChildren.begin(); child != sourceChildren.end(); child++)
+	move_subtree(child, filenameTreeStore->append(dest->children()));
+    hashMap[pathName] = dest;
+    // could also erase source from the tree but it is equivalent, and more
+    // satisfying, to erase the top-level source after the recursive invocation
+    // of this method is finished. Don't forget to do that.
+}
+
+std::string AlarmFsckFileChooser::copy_row(const Gtk::TreeStore::iterator& source, const Gtk::TreeStore::iterator& dest){
+    // Use get/set_value because the [] operator is having trouble when
+    // appearing on both sides of an equation
+    // Returns pathName for convenience
+    auto& fvcr = fileViewColumnRecord;
+    std::string pathName = source->get_value(fvcr.nameCol);
+    dest->set_value(fvcr.nameCol, pathName);
+    dest->set_value(fvcr.sizeCol, source->get_value(fvcr.sizeCol));
+    dest->set_value(fvcr.isDir, source->get_value(fvcr.isDir));
+    dest->set_value(fvcr.hasCumSize, source->get_value(fvcr.hasCumSize));
+    return pathName;
+}
+
+
+void AlarmFsckFileChooser::insert_checked_entry(const std::string& filePath,
+	off_t size, bool isDir, bool is_child){
     if(is_child){
 	Gtk::TreeModel::iterator& parentRow = hashMap[parent_directory(filePath)];
 	const Gtk::TreeModel::iterator& row = filenameTreeStore->append(parentRow->children());
-	populate_row(row, filePath, size);
+	populate_row(row, filePath, size, isDir);
     } else {
 	const Gtk::TreeModel::iterator& row = filenameTreeStore->append();
-	populate_row(row, filePath, size);
+	populate_row(row, filePath, size, isDir);
     }
 }
 
-void AlarmFsckFileChooser::populate_row(const Gtk::TreeModel::iterator& row, const std::string& filePath, off_t size){
-    // TODO: what is the validity of these iterators later
-    // I think it's fine, gtk website seems to say so
-    (*row)[fileViewColumnRecord.sizeCol] = size;
+void AlarmFsckFileChooser::populate_row(const Gtk::TreeModel::iterator& row,
+	const std::string& filePath, off_t size, bool isDir){
     (*row)[fileViewColumnRecord.nameCol] = filePath;
-    //std::pair<std::string,Gtk::TreeStore::iterator> somePair{filePath, row};
-    //hashMap.insert(somePair);
+    if(isDir){
+	// the size argument is ignored in this case
+	(*row)[fileViewColumnRecord.isDir] = true;
+	(*row)[fileViewColumnRecord.hasCumSize] = false;
+	(*row)[fileViewColumnRecord.sizeCol] = 0;
+    } else {
+	(*row)[fileViewColumnRecord.isDir] = false;
+	(*row)[fileViewColumnRecord.hasCumSize] = true;
+	(*row)[fileViewColumnRecord.sizeCol] = size;
+	totalSize += size;
+    }
     hashMap[filePath] = row;
-    totalSize += size;
 }
 
 void AlarmFsckFileChooser::import_file(const std::string& fileName){
@@ -174,30 +214,13 @@ void AlarmFsckFileChooser::import_file(const std::string& fileName){
     populate_file_view(fileList);
 }
 
-void AlarmFsckFileChooser::move_subtree(const Gtk::TreeStore::iterator& source, const Gtk::TreeStore::iterator& dest)
-{
-    auto& fvcr = fileViewColumnRecord;
-    std::string pathName = source->get_value(fvcr.nameCol);
-    // first copy the base nodes. Use get/set_value because the [] operator is
-    // having trouble when appearing on both sides of an equation
-    dest->set_value(fvcr.nameCol, pathName);
-    dest->set_value(fvcr.sizeCol, source->get_value(fvcr.sizeCol));
-    // and then recursively the children
-    auto& sourceChildren = source->children();
-    for(auto child = sourceChildren.begin(); child != sourceChildren.end(); child++)
-	move_subtree(child, filenameTreeStore->append(dest->children()));
-    hashMap[pathName] = dest;
-    // could also erase source from the tree but it is equivalent, and more
-    // satisfying, to erase the top-level source after the recursive invocation
-    // of this method is finished. Don't forget to do that.
-}
-
 void AlarmFsckFileChooser::erase_subtree(const Gtk::TreeStore::iterator& top)
 {
     auto& children = top->children();
     for(auto child = children.begin(); child != children.end(); child++)
 	erase_subtree(child);
-    totalSize -= ((*top)[fileViewColumnRecord.sizeCol]);
+    if(!(*top)[fileViewColumnRecord.isDir])
+	totalSize -= ((*top)[fileViewColumnRecord.sizeCol]);
     hashMap.erase((*top)[fileViewColumnRecord.nameCol]);
     // don't forget to erase top iterator after exiting
 }

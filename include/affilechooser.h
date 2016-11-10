@@ -43,9 +43,11 @@ private:
     class ModelColumns : public Gtk::TreeModelColumnRecord{
 	    public:
 		    ModelColumns()
-		    { add(nameCol); add(sizeCol); }
-		    Gtk::TreeModelColumn<off_t> sizeCol;
+		    {add(nameCol); add(sizeCol); add(isDir); add(hasCumSize);}
 		    Gtk::TreeModelColumn<std::string> nameCol;
+		    Gtk::TreeModelColumn<off_t> sizeCol;
+		    Gtk::TreeModelColumn<bool> isDir;
+		    Gtk::TreeModelColumn<bool> hasCumSize;
     } fileViewColumnRecord;
     Glib::RefPtr<Gtk::TreeStore> filenameTreeStore;
 
@@ -58,9 +60,10 @@ private:
     off_t totalSize;
     void check_path_prerequisites(const std::string&);
     std::pair<bool, off_t> is_accessible_directory(const std::string&);
-    void insert_checked_entry(const std::string&, off_t, const bool is_child=false);
-    void populate_row(const Gtk::TreeModel::iterator&, const std::string&, off_t);
+    void populate_row(const Gtk::TreeModel::iterator&, const std::string&, off_t, bool);
+    void insert_checked_entry(const std::string&, off_t, bool isDir, bool is_child=false);
     void move_subtree(const Gtk::TreeStore::iterator&, const Gtk::TreeStore::iterator&);
+    std::string copy_row(const Gtk::TreeStore::iterator&, const Gtk::TreeStore::iterator&);
     void relocate_subtree(const std::string&);
     void erase_subtree(const Gtk::TreeStore::iterator&);
     bool updatedFileList;
