@@ -60,7 +60,7 @@ private:
     bool erase_file(std::string);
 
     // rands
-    gint32 randNo1, randNo2;
+    int randFactor1, randFactor2;
 };
 
 #endif // ORG_WALRUS_ALARMFSCK_ALARMFSCK_H

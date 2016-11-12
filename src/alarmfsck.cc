@@ -6,9 +6,8 @@
 #include <chrono>
 #include <functional>
 #include <cmath>
+#include <random>
 #include <gtkmm/application.h>
-#include <glibmm/random.h>
-#include <glibmm/timer.h>
 extern "C" {
 #include <fcntl.h>
 #include <unistd.h>
@@ -56,20 +55,16 @@ AlarmFsck::AlarmFsck():
 		&AlarmFsck::on_window_delete));
 
     // Random Stuff
-    /* TODO: figure out a good combination of random numbers such that the
-       user won't reach for a calculator. For example, such that the maximal
-       result can be some value like 8000. Perhaps allow it to be set by user.
-       Also use stdlibc++ Random. */
-    const double upper_product_limit = std::log(1000), lower_factor_limit = std::log(3);
-    Glib::Rand randomGen;
-    double randDouble1 = randomGen.get_double_range(lower_factor_limit, upper_product_limit - lower_factor_limit);
-    randNo1 = (int) (std::exp(randDouble1) + .5);
-    randNo2 = (int) (std::exp(randomGen.get_double_range(lower_factor_limit, upper_product_limit - randDouble1)) + .5);
+    /* TODO: Allow the maximum product of the two numbers and the lower bounds
+     * for individual factors to be set by the user. */
+    const double lower_product_limit = std::log(100), upper_product_limit = std::log(1000), lower_factor_limit = std::log(3);
+    std::default_random_engine randEng(std::chrono::system_clock::now().time_since_epoch().count());
+    double productLog = std::uniform_real_distribution<double>(lower_product_limit, upper_product_limit)(randEng);
+    double factorLog1 = std::uniform_real_distribution<double>(lower_factor_limit, productLog - lower_factor_limit)(randEng);
+    randFactor1 = (int) (std::exp(factorLog1) + .5);
+    randFactor2 = (int) (std::exp(productLog - factorLog1) + .5);
     std::stringstream ss;
-    if(randomGen.get_bool())
-	ss << randNo1 << " * " << randNo2;
-    else
-	ss << randNo2 << " * " << randNo1;
+    ss << randFactor1 << " * " << randFactor2;
 
     // Pack widgets
     add(vBox);
@@ -109,25 +104,25 @@ AlarmFsck::AlarmFsck():
     ca_proplist_create(&canberraProps);
     ca_proplist_sets(canberraProps, CA_PROP_MEDIA_FILENAME, audioPath.c_str());
 
-    //hasHostages = (access(compressedPath.c_str(), F_OK) == 0);
-    //if(hasHostages){
-    //    try {encrypt_hostage_archive();}
-    //    catch (const CryptoPP::Exception& error) {
-    //        error_to_user(error.what());
-    //        hasHostages = false;
-    //    }
-    //    try {afCommon::erase_file(compressedPath);}
-    //    catch (const AfSystemException& error){
-    //        error_to_user(error.get_message() + ":\nnow, more than ever, is the time to multiply!", error.what());
-    //    }
-    //}
+    hasHostages = (access(compressedPath.c_str(), F_OK) == 0);
+    if(hasHostages){
+        try {encrypt_hostage_archive();}
+        catch (const CryptoPP::Exception& error) {
+            error_to_user(error.what());
+            hasHostages = false;
+        }
+        try {afCommon::erase_file(compressedPath);}
+        catch (const AfSystemException& error){
+            error_to_user(error.get_message() + ":\nnow, more than ever, is the time to multiply!", error.what());
+        }
+    }
 
-    ////start the horrible loop
-    //loopFinished = true;
-    //stopPlayback = false;
+    //start the horrible loop
+    loopFinished = true;
+    stopPlayback = false;
 
-    //std::thread t(playback_looper, std::ref(canberraContext), std::ref(canberraProps));
-    //t.detach();
+    std::thread t(playback_looper, std::ref(canberraContext), std::ref(canberraProps));
+    t.detach();
 }
 
 void AlarmFsck::playback_looper(ca_context* canCon, ca_proplist* canProp){
@@ -180,7 +175,7 @@ int parseAnswerString(std::string holly)
 void AlarmFsck::on_button_clicked()
 {
     if(solvedIt) return;
-    if(parseAnswerString(answerField.get_text().raw()) != randNo1*randNo2){
+    if(parseAnswerString(answerField.get_text().raw()) != randFactor1 * randFactor2){
 	commentField.set_text("Wrooong!!!");
 	return;
     }
