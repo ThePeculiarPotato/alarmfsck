@@ -5,6 +5,7 @@
 #include <thread>
 #include <chrono>
 #include <functional>
+#include <cmath>
 #include <gtkmm/application.h>
 #include <glibmm/random.h>
 #include <glibmm/timer.h>
@@ -59,11 +60,16 @@ AlarmFsck::AlarmFsck():
        user won't reach for a calculator. For example, such that the maximal
        result can be some value like 8000. Perhaps allow it to be set by user.
        Also use stdlibc++ Random. */
+    const double upper_product_limit = std::log(1000), lower_factor_limit = std::log(3);
     Glib::Rand randomGen;
-    randNo1 = randomGen.get_int_range(1, 199);
-    randNo2 = randomGen.get_int_range(1, 199);
+    double randDouble1 = randomGen.get_double_range(lower_factor_limit, upper_product_limit - lower_factor_limit);
+    randNo1 = (int) (std::exp(randDouble1) + .5);
+    randNo2 = (int) (std::exp(randomGen.get_double_range(lower_factor_limit, upper_product_limit - randDouble1)) + .5);
     std::stringstream ss;
-    ss << randNo1 << " * " << randNo2;
+    if(randomGen.get_bool())
+	ss << randNo1 << " * " << randNo2;
+    else
+	ss << randNo2 << " * " << randNo1;
 
     // Pack widgets
     add(vBox);
@@ -103,25 +109,25 @@ AlarmFsck::AlarmFsck():
     ca_proplist_create(&canberraProps);
     ca_proplist_sets(canberraProps, CA_PROP_MEDIA_FILENAME, audioPath.c_str());
 
-    hasHostages = (access(compressedPath.c_str(), F_OK) == 0);
-    if(hasHostages){
-	try {encrypt_hostage_archive();}
-	catch (const CryptoPP::Exception& error) {
-	    error_to_user(error.what());
-	    hasHostages = false;
-	}
-	try {afCommon::erase_file(compressedPath);}
-	catch (const AfSystemException& error){
-	    error_to_user(error.get_message() + ":\nnow, more than ever, is the time to multiply!", error.what());
-	}
-    }
+    //hasHostages = (access(compressedPath.c_str(), F_OK) == 0);
+    //if(hasHostages){
+    //    try {encrypt_hostage_archive();}
+    //    catch (const CryptoPP::Exception& error) {
+    //        error_to_user(error.what());
+    //        hasHostages = false;
+    //    }
+    //    try {afCommon::erase_file(compressedPath);}
+    //    catch (const AfSystemException& error){
+    //        error_to_user(error.get_message() + ":\nnow, more than ever, is the time to multiply!", error.what());
+    //    }
+    //}
 
-    //start the horrible loop
-    loopFinished = true;
-    stopPlayback = false;
+    ////start the horrible loop
+    //loopFinished = true;
+    //stopPlayback = false;
 
-    std::thread t(playback_looper, std::ref(canberraContext), std::ref(canberraProps));
-    t.detach();
+    //std::thread t(playback_looper, std::ref(canberraContext), std::ref(canberraProps));
+    //t.detach();
 }
 
 void AlarmFsck::playback_looper(ca_context* canCon, ca_proplist* canProp){

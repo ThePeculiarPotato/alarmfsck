@@ -15,18 +15,21 @@ The following development libraries and their dependencies must be installed on
 your system for the code to compile:
 - gtkmm-3.0
 - libcanberra-gtk3
-- libtar
 - libcrypto++
+- libtar
 
 COMPILING AND RUNNING
 
-Edit your Makefile if necessary as per above and then run, from the base
-directory,
+From the base directory, run
 
 	make
 	sudo make auth
 
-The pre-hibernation executable (the one you want) is bin/aflaunch.
+The pre-hibernation executable (the one you want) is bin/aflaunch. Please
+ensure that your desktop environment does not present a lock screen/password
+prompt when waking up from hibernation. Or, if it does but nevertheless plays
+background audio, just leave it like that, as that is very much in the
+masochistic spirit of this application.
 
 ACKNOWLEDGMENTS
 
@@ -38,6 +41,13 @@ https://creativecommons.org/licenses/by/3.0/). The clips are as follows:
 "Angry Chipmunk" by Mike Koenig, http://soundbible.com/1268-Angry-Chipmunk.html  
 "Cat Scream" by soundbible.com contributor "Ca9", http://soundbible.com/1509-Cat-Scream.html  
 "Screaming Hawk" by soundbible.com contributor "PsychoBird", http://soundbible.com/1517-Screaming-Hawk.html  
+
+More information on the APIs used can be found at:
+
+gtkmm - http://www.gtkmm.org
+libcanberra - http://0pointer.de/lennart/projects/libcanberra/
+crypto++ - https://www.cryptopp.com/
+libtar - http://repo.or.cz/w/libtar.git
 
 -----------
 
