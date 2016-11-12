@@ -44,9 +44,9 @@ https://creativecommons.org/licenses/by/3.0/). The clips are as follows:
 
 More information on the APIs used can be found at:
 
-gtkmm - http://www.gtkmm.org
-libcanberra - http://0pointer.de/lennart/projects/libcanberra/
-crypto++ - https://www.cryptopp.com/
+gtkmm - http://www.gtkmm.org  
+libcanberra - http://0pointer.de/lennart/projects/libcanberra/  
+crypto++ - https://www.cryptopp.com/  
 libtar - http://repo.or.cz/w/libtar.git
 
 -----------
