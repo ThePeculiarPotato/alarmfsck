@@ -4,6 +4,7 @@
 #include <iostream>
 #include <fstream>
 #include <memory>
+#include <glibmm/regex.h>
 extern "C" {
 #include <fcntl.h>
 #include <unistd.h>
@@ -14,6 +15,25 @@ extern "C" {
 }
 #include <cryptopp/files.h>
 #include <cryptopp/gzip.h>
+
+const size_t maxSize = 200;
+
+std::string format_time_point(const std::tm& timePoint_tm, const std::string& format){
+    char *strBuf = new char[maxSize];
+    std::strftime(strBuf, maxSize, format.c_str(), &timePoint_tm);
+    std::string formattedTime(strBuf);
+    delete[] strBuf;
+    return formattedTime;
+}
+
+std::string format_time_point(const AlarmFsckLauncher::af_time_point& timePoint, const std::string& format){
+    return format_time_point(time_point_to_tm(timePoint), format);
+}
+
+std::tm time_point_to_tm(const AlarmFsckLauncher::af_time_point& timePoint){
+    std::time_t timePoint_t = std::chrono::system_clock::to_time_t(timePoint);
+    return *(std::localtime(&timePoint_t));
+}
 
 void AlarmFsckLauncher::check_hostage_file(){
     try {
@@ -34,7 +54,7 @@ void AlarmFsckLauncher::write_or_update_hostage_list_file(){
 	    throw AfSystemException("Could not open existing " + hostage_file);
 	    return;
 	}
-	if(statBuf->st_mtime > timeStart.to_unix()){
+	if(statBuf->st_mtime > (std::chrono::system_clock::to_time_t(timeStart))){
 	    write_hostage_list_file();
 	}
     } else {
@@ -101,6 +121,103 @@ void AlarmFsckLauncher::write_compressed_hostage_archive(){
 		new CryptoPP::FileSink(compressedPath.c_str())
 		)
 	    );
+}
+
+bool AlarmFsckLauncher::check_time_entry(){
+    Gtk::TreeModel::iterator iter = inAtComboBox.get_active();
+    switch((*iter)[inAtColumnRecord.idCol]){
+	case 1:
+	    {
+		return check_interval_entry();
+		break;
+	    }
+	case 2:
+	    {
+		return check_datetime_entry();
+		break;
+	    }
+    }
+    return true;
+}
+
+bool AlarmFsckLauncher::check_interval_entry(){
+    double interval;
+    try{ interval = stod(timeIntervalEntry.get_text().raw()); }
+    catch(std::exception& e){
+	progressBar.set_text("Invalid time interval.");
+	return false;
+    }
+    if(interval <= 0){
+	progressBar.set_text("Wakeup time must be in the future.");
+	return false;
+    }
+    int modifier;
+    Gtk::TreeModel::iterator iter2 = timeUnitComboBox.get_active();
+    switch((*iter2)[timeUnitColumnRecord.idCol]){
+	case 1:
+	    modifier = 1;
+	    break;
+	case 2:
+	    modifier = 60;
+	    break;
+	case 3:
+	    modifier = 3600;
+	    break;
+    }
+    timeWakeup = std::chrono::system_clock::now() +
+	std::chrono::duration<int>((int) (interval * modifier));
+    return true;
+}
+
+bool AlarmFsckLauncher::check_datetime_entry(){
+    using namespace std::chrono;
+    af_time_point timeNow = system_clock::now();
+    std::tm wakeup_tm;
+    Glib::RefPtr<Glib::Regex> timeRegex = Glib::Regex::create("^(\\d{2}):(\\d{2}):(\\d{2})$");
+    Glib::MatchInfo timeMatch;
+    if(!timeRegex->match(timeEntry.get_text(), timeMatch)){
+	progressBar.set_text("Invalid time format.");
+	return false;
+    }
+    Glib::ustring dateString = dateEntry.get_text();
+    Glib::RefPtr<Glib::Regex> dateRegex = Glib::Regex::create("^(\\d{2})/(\\d{2})/(\\d{4})$");
+    Glib::MatchInfo dateMatch;
+    int year, month, day;
+    if(!dateRegex->match(dateString, dateMatch)){
+	// TODO: trim the strings
+	if(dateString == "today"){
+	    wakeup_tm = time_point_to_tm(timeNow);
+	} else if (dateString == "tomorrow"){
+	    wakeup_tm = time_point_to_tm(timeNow + hours(24));
+	} else {
+	    progressBar.set_text("Invalid date format.");
+	    return false;
+	}
+    } else {
+	wakeup_tm.tm_year = std::stoi(dateMatch.fetch(3).raw()) - 1900;
+	wakeup_tm.tm_mon = std::stoi(dateMatch.fetch(2).raw()) - 1;
+	wakeup_tm.tm_mday  = std::stoi(dateMatch.fetch(1).raw());
+    }
+    // enter time of day
+    wakeup_tm.tm_hour = std::stoi(timeMatch.fetch(1).raw());
+    wakeup_tm.tm_min = std::stoi(timeMatch.fetch(2).raw());
+    wakeup_tm.tm_sec = std::stod(timeMatch.fetch(3).raw());
+    std::time_t wakeup_t = std::mktime(&wakeup_tm);
+    if(wakeup_t == -1){
+	progressBar.set_text("Not a real point in time.");
+	return false;
+    }
+    af_time_point potentialWakeup = system_clock::from_time_t(wakeup_t);
+    if(potentialWakeup <= timeNow){
+	progressBar.set_text("Wakeup time must be in the future.");
+	return false;
+    }
+    timeWakeup = potentialWakeup;
+    // std::mktime accepts and converts dates like 32nd August, so must update
+    // text entries again
+    timeEntry.set_text(format_time_point(timeWakeup, "%T"));
+    dateEntry.set_text(format_time_point(timeWakeup, "%d/%m/%Y"));
+    return true;
 }
 
 const std::string DEFAULT_RTC		= "rtc0";

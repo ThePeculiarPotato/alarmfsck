@@ -12,7 +12,7 @@
 #include <gtkmm/entry.h>
 #include <gtkmm/liststore.h>
 #include <gtkmm/progressbar.h>
-#include <glibmm/datetime.h>
+#include <chrono>
 extern "C" {
 #include <libtar.h>
 }
@@ -21,6 +21,12 @@ class AfSystemException;
 
 class AlarmFsckLauncher : public Gtk::Window
 {
+public:
+    // typedef to avoid typing
+    using af_time_point = typename std::chrono::time_point<std::chrono::system_clock>;
+
+    AlarmFsckLauncher();
+    void check_good_to_go();
 private:
     // General widgets:
     Gtk::Button okButton, cancelButton, hostageSelectButton;
@@ -31,7 +37,7 @@ private:
     Gtk::ButtonBox bottomButtonHBox;
     Gtk::ComboBox inAtComboBox, timeUnitComboBox;
     Gtk::Entry timeIntervalEntry, timeEntry, dateEntry;
-    Glib::DateTime timeStart, timeWakeup;
+    af_time_point timeStart, timeWakeup;
     AlarmFsckFileChooser fileChooser;
 
     // Drop-down menus
@@ -80,9 +86,10 @@ private:
     void error_to_user(const Glib::ustring&, const std::string&);
     void error_to_user(const AfSystemException&);
     void error_to_user(const std::string&);
-public:
-    AlarmFsckLauncher();
-    void check_good_to_go();
 };
+
+std::string format_time_point(const std::tm& timePoint_tm, const std::string& format);
+std::string format_time_point(const AlarmFsckLauncher::af_time_point&, const std::string& format);
+std::tm time_point_to_tm(const AlarmFsckLauncher::af_time_point& timePoint);
 
 #endif // ORG_WALRUS_ALARMFSCK_AFLAUNCH_H

@@ -1,6 +1,5 @@
 #include "common.h"
 #include "aflaunch.h"
-#include <glibmm/regex.h>
 #include <glibmm/spawn.h>
 #include <gtkmm/messagedialog.h>
 #include <iostream>
@@ -8,6 +7,7 @@
 #include <string>
 #include <cstdlib>
 #include <cstdio>
+#include <ctime>
 #include <memory>
 #include <gtkmm/application.h>
 extern "C" {
@@ -68,13 +68,15 @@ AlarmFsckLauncher::AlarmFsckLauncher() :
     inHBox.pack_start(timeIntervalEntry, Gtk::PACK_EXPAND_PADDING);
     inHBox.pack_start(timeUnitComboBox, Gtk::PACK_EXPAND_WIDGET);
 
-    timeStart = Glib::DateTime::create_now_local();
-    timeWakeup = timeStart.add_hours(suggested_hours);
-    timeEntry.set_text(timeWakeup.format("%T"));
+    // rather lengthy time conversion stuff
+    timeStart = std::chrono::system_clock::now();
+    timeWakeup = timeStart + std::chrono::hours(suggested_hours);
+
+    timeEntry.set_text(format_time_point(timeWakeup, "%T"));
     timeEntry.set_alignment(.5);
     timeEntry.set_width_chars(8);
 
-    dateEntry.set_text(timeWakeup.format("%d/%m/%Y"));
+    dateEntry.set_text(format_time_point(timeWakeup, "%d/%m/%Y"));
     dateEntry.set_alignment(.5);
     dateEntry.set_width_chars(10);
 
@@ -214,104 +216,6 @@ void AlarmFsckLauncher::error_to_user(const std::string& appErrMessage){
     error_to_user(appErrMessage, "");
 }
 
-bool AlarmFsckLauncher::check_time_entry(){
-    Gtk::TreeModel::iterator iter = inAtComboBox.get_active();
-    switch((*iter)[inAtColumnRecord.idCol]){
-	case 1:
-	    {
-		return check_interval_entry();
-		break;
-	    }
-	case 2:
-	    {
-		return check_datetime_entry();
-		break;
-	    }
-    }
-    return true;
-}
-
-bool AlarmFsckLauncher::check_interval_entry(){
-    double interval;
-    try{ interval = stod(timeIntervalEntry.get_text().raw()); }
-    catch(std::exception& e){
-	progressBar.set_text("Invalid time interval.");
-	return false;
-    }
-    if(interval <= 0){
-	progressBar.set_text("Wakeup time must be in the future.");
-	return false;
-    }
-    int modifier;
-    Gtk::TreeModel::iterator iter2 = timeUnitComboBox.get_active();
-    switch((*iter2)[timeUnitColumnRecord.idCol]){
-	case 1:
-	    modifier = 1;
-	    break;
-	case 2:
-	    modifier = 60;
-	    break;
-	case 3:
-	    modifier = 3600;
-	    break;
-    }
-    Glib::DateTime timeNow = Glib::DateTime::create_now_local();
-    timeWakeup = timeNow.add_seconds(interval*modifier);
-    return true;
-}
-
-bool AlarmFsckLauncher::check_datetime_entry(){
-    Glib::DateTime timeNow = Glib::DateTime::create_now_local();
-    Glib::RefPtr<Glib::Regex> timeRegex = Glib::Regex::create("^(\\d{2}):(\\d{2}):(\\d{2})$");
-    Glib::MatchInfo timeMatch;
-    if(!timeRegex->match(timeEntry.get_text(), timeMatch)){
-	progressBar.set_text("Invalid time format.");
-	return false;
-    }
-    Glib::ustring dateString = dateEntry.get_text();
-    Glib::RefPtr<Glib::Regex> dateRegex = Glib::Regex::create("^(\\d{2})/(\\d{2})/(\\d{4})$");
-    Glib::MatchInfo dateMatch;
-    int year, month, day;
-    if(!dateRegex->match(dateString, dateMatch)){
-	// TODO: trim the strings
-	if(dateString == "today"){
-	    year = timeNow.get_year();
-	    month = timeNow.get_month();
-	    day = timeNow.get_day_of_month();
-	} else if (dateString == "tomorrow"){
-	    Glib::DateTime dateTomorrow = timeNow.add_days(1);
-	    year = dateTomorrow.get_year();
-	    month = dateTomorrow.get_month();
-	    day = dateTomorrow.get_day_of_month();
-	} else {
-	    progressBar.set_text("Invalid date format.");
-	    return false;
-	}
-    } else {
-	year = std::stoi(dateMatch.fetch(3).raw());
-	month = std::stoi(dateMatch.fetch(2).raw());
-	day  = std::stoi(dateMatch.fetch(1).raw());
-    }
-    // glibmm was either buggy or too clever for me, had to resort
-    // to glib here
-    GDateTime *gPotentialTime = g_date_time_new_local(
-	    year, month, day,
-	    std::stoi(timeMatch.fetch(1).raw()),
-	    std::stoi(timeMatch.fetch(2).raw()),
-	    std::stod(timeMatch.fetch(3).raw()));
-    if(gPotentialTime == NULL){
-	progressBar.set_text("Not a real point in time.");
-	return false;
-    }
-    Glib::DateTime potentialTime = Glib::wrap(gPotentialTime);
-    if(potentialTime.compare(timeNow) <= 0){
-	progressBar.set_text("Wakeup time must be in the future.");
-	return false;
-    }
-    timeWakeup = potentialTime;
-    return true;
-}
-
 void AlarmFsckLauncher::on_ok_button_click(){
     if(!check_time_entry()) return;
 
@@ -335,17 +239,19 @@ going to be. And don't forget to turn up your speakers if you still want to do t
     }
 
 
-    // final time check
-    Glib::DateTime finalTimeCheck = Glib::DateTime::create_now_local();
-    finalTimeCheck.add_seconds(5);
-    if(timeWakeup.compare(finalTimeCheck) <= 0){
-	error_to_user("You should really set this a bit further in the future.");
-	return;
+    {
+	using namespace std::chrono;
+	// final time check
+	if(timeWakeup <= (system_clock::now() + seconds(5))){
+	    error_to_user("You should really set this a bit further in the future.");
+	    return;
+	}
+	// run hibernator and exit
+	// TODO: should I use a more specific cast?
+	std::vector<std::string> args{binDir + hib_exec,
+		std::to_string((unsigned long) system_clock::to_time_t(timeWakeup))};
+	Glib::spawn_async("",args);
     }
-
-    // run hibernator and exit
-    std::vector<std::string> args({binDir + hib_exec,std::to_string(timeWakeup.to_unix())});
-    Glib::spawn_async("",args);
     std::cout << "exiting" << std::endl;
     hide();
 }
