@@ -40,6 +40,7 @@ alarmfsck.o: alarmfsck.h
 aflaunch-ui.o aflaunch-logic.o: aflaunch.h common.h
 affilechooser-ui.o: affilechooser.h aflaunch.h common.h
 affilechooser-logic.o: affilechooser.h common.h
+hibernator.o: common.h
 
 aflaunch.h: affilechooser.h
 alarmfsck.h: common.h
@@ -51,8 +52,8 @@ $(REXEC): alarmfsck.o common.o
 $(LEXEC): aflaunch-ui.o aflaunch-logic.o affilechooser-ui.o affilechooser-logic.o common.o
 	$(CXX) -o $@ $^ $(CFLAGS) $(LIBS) -ltar
 
-$(HEXEC): hibernator.o
-	$(CXX) -o $@ $^
+$(HEXEC): hibernator.o common.o
+	$(CXX) -o $@ $^ $(LIBS)
 
 # unclutter the base directory and move object files to src/
 move:

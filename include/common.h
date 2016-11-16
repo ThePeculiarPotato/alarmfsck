@@ -14,6 +14,7 @@ const std::string hostage_archive= "hostages.tar";
 const std::string hostage_compressed= "hostages.tar.gz";
 const std::string hostage_encrypted = "hostages.enc";
 const std::string hib_exec= "hibernator";
+const std::string ringer_exec= "alarmfsck";
 const std::string audio_file= "genocide.oga";
 const char file_delim= '/';
 

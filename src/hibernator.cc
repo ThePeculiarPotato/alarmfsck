@@ -1,9 +1,12 @@
+#include "common.h"
 #include <ctime>
 #include <cerrno>
 #include <cstring>
+#include <cstdio>
 #include <iostream>
 #include <fstream>
 #include <string>
+#include <glibmm/spawn.h>
 extern "C"{
 #include <linux/rtc.h>
 #include <sys/stat.h>
@@ -63,7 +66,18 @@ bool suspend_system()
     ofs.flush();
     /* this executes after wake from suspend */
     ofs.close();
+    // Drop privileges
+    // TODO: be more thorough
+    uid_t newuid = getuid(), olduid = geteuid();
+    if(setreuid(newuid, newuid) == -1){
+	error_plain("Could not drop privileges.");
+	return 1;
+    }
     std::cout << "Hiii y'alll!!!" << std::endl;
+    // launch ringer
+    std::vector<std::string> args{afCommon::get_executable_dir() + ringer_exec};
+    Glib::spawn_async("",args);
+    std::cout << "Execed" << std::endl;
     return true;
 }
 
@@ -105,10 +119,6 @@ int main(int argc, char *argv[]){
 	return 1;
     }
     time_t wakeup = std::stoi(argv[1]);
-    //	if(wakeup < time(0) + 5){
-    //		error_plain("Wakeup time should be in the future");
-    //		return 1;
-    //	}
     int fd = open(DEFAULT_RTC_DEVICE, O_RDONLY | O_CLOEXEC);
     if(fd < 0){
 	error_errno("Could not open RTC device.");
