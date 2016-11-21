@@ -234,8 +234,10 @@ going to be. And don't forget to turn up your speakers if you still want to do t
 	perform_rtc_check();
     } catch(const AfSystemException& error){
 	error_to_user(error);
+	return;
     } catch(const CryptoPP::Exception& error){
 	error_to_user(error.what());
+	return;
     }
 
 

@@ -4,7 +4,7 @@
 #include <iostream>
 #include <fstream>
 #include <memory>
-#include <glibmm/regex.h>
+#include <regex>
 extern "C" {
 #include <fcntl.h>
 #include <unistd.h>
@@ -172,36 +172,47 @@ bool AlarmFsckLauncher::check_interval_entry(){
 bool AlarmFsckLauncher::check_datetime_entry(){
     using namespace std::chrono;
     af_time_point timeNow = system_clock::now();
+    // this will be filled with the human-readable date&time data entered by
+    // the user
     std::tm wakeup_tm;
-    Glib::RefPtr<Glib::Regex> timeRegex = Glib::Regex::create("^(\\d{2}):(\\d{2}):(\\d{2})$");
-    Glib::MatchInfo timeMatch;
-    if(!timeRegex->match(timeEntry.get_text(), timeMatch)){
+
+    // check entered time format
+    std::regex timeRegex("^(\\d{2}):(\\d{2}):(\\d{2})$");
+    std::smatch timeMatch;
+    const std::string timeEntryText = timeEntry.get_text();
+    if(!std::regex_match(timeEntryText, timeMatch, timeRegex)){
 	progressBar.set_text("Invalid time format.");
 	return false;
     }
-    Glib::ustring dateString = dateEntry.get_text();
-    Glib::RefPtr<Glib::Regex> dateRegex = Glib::Regex::create("^(\\d{2})/(\\d{2})/(\\d{4})$");
-    Glib::MatchInfo dateMatch;
-    int year, month, day;
-    if(!dateRegex->match(dateString, dateMatch)){
+
+    // check entered date format, allowing for the special values "today" and
+    // "tomorrow". Also populate the date portion of wakeup_tm.
+    std::regex dateRegex("^(\\d{2})/(\\d{2})/(\\d{4})$");
+    std::smatch dateMatch;
+    const std::string dateEntryText = dateEntry.get_text();
+    if(!std::regex_match(dateEntryText, dateMatch, dateRegex)){
 	// TODO: trim the strings
-	if(dateString == "today"){
+	if(dateEntryText == "today"){
 	    wakeup_tm = time_point_to_tm(timeNow);
-	} else if (dateString == "tomorrow"){
+	} else if (dateEntryText == "tomorrow"){
 	    wakeup_tm = time_point_to_tm(timeNow + hours(24));
 	} else {
 	    progressBar.set_text("Invalid date format.");
 	    return false;
 	}
     } else {
-	wakeup_tm.tm_year = std::stoi(dateMatch.fetch(3).raw()) - 1900;
-	wakeup_tm.tm_mon = std::stoi(dateMatch.fetch(2).raw()) - 1;
-	wakeup_tm.tm_mday  = std::stoi(dateMatch.fetch(1).raw());
+	// the subtractions are on account of std::tm's definition
+	wakeup_tm.tm_year = std::stoi(dateMatch[3]) - 1900;
+	wakeup_tm.tm_mon = std::stoi(dateMatch[2]) - 1;
+	wakeup_tm.tm_mday  = std::stoi(dateMatch[1]);
     }
-    // enter time of day
-    wakeup_tm.tm_hour = std::stoi(timeMatch.fetch(1).raw());
-    wakeup_tm.tm_min = std::stoi(timeMatch.fetch(2).raw());
-    wakeup_tm.tm_sec = std::stod(timeMatch.fetch(3).raw());
+
+    // populate the time portion of wakeup_tm
+    wakeup_tm.tm_hour = std::stoi(timeMatch[1]);
+    wakeup_tm.tm_min = std::stoi(timeMatch[2]);
+    wakeup_tm.tm_sec = std::stod(timeMatch[3]);
+
+    // convert to seconds since epoch, do sanity checks
     std::time_t wakeup_t = std::mktime(&wakeup_tm);
     if(wakeup_t == -1){
 	progressBar.set_text("Not a real point in time.");
