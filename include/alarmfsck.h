@@ -47,7 +47,8 @@ private:
     bool solvedIt;
 
     // file-tree
-    std::string prefixDir;
+    std::string dataDir;
+    std::string userDir;
     std::string compressedPath;
     std::string encryptedPath;
     std::string archivePath;

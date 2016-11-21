@@ -68,7 +68,7 @@ AlarmFsckLauncher::AlarmFsckLauncher() :
     inHBox.pack_start(timeIntervalEntry, Gtk::PACK_EXPAND_PADDING);
     inHBox.pack_start(timeUnitComboBox, Gtk::PACK_EXPAND_WIDGET);
 
-    // rather lengthy time conversion stuff
+    // time conversion stuff
     timeStart = std::chrono::system_clock::now();
     timeWakeup = timeStart + std::chrono::hours(suggested_hours);
 
@@ -109,23 +109,23 @@ AlarmFsckLauncher::AlarmFsckLauncher() :
     progressBar.hide();
 
     // TODO: move data files into predefined user/system dirs
-    std::string execDir;
-    std::string baseDir;
-    try{execDir = afCommon::get_executable_dir();}
+    try{binDir = afCommon::get_executable_dir();}
     catch(AfSystemException& error){
-	error_to_user(error.get_message() + ": Using current path.", error.what());
-	execDir = "";
+	error_to_user(error.get_message() + ": Using " + bin_dir, error.what());
+	binDir = bin_dir;
     }
-    try{baseDir = afCommon::cpp_realpath(execDir + "../");}
-    catch(AfSystemException& error){
-	error_to_user(error.get_message() + ": Using ../", error.what());
-	baseDir  = "../";
+
+    // save intermediate files in $HOME/.alarmfsck/
+    std::string homeDir = getenv("HOME");
+    userDir = homeDir + "/." + package_name + "/";
+    if(access(userDir.c_str(), W_OK | X_OK) == -1 && mkdir(userDir.c_str(), 0777) == -1){
+	error_to_user("Could not access " + userDir + ": Using current path.");
+	userDir = "";
     }
-    prefixDir = baseDir + data_dir;
-    binDir = baseDir + bin_dir;
-    hostageFilePath = prefixDir + hostage_file;
-    archivePath = prefixDir + hostage_archive;
-    compressedPath = prefixDir + hostage_compressed;
+
+    hostageFilePath = userDir + hostage_file;
+    archivePath = userDir + hostage_archive;
+    compressedPath = userDir + hostage_compressed;
 
     check_hostage_file();
     fileChooser.set_updated(false);

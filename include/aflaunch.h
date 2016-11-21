@@ -52,8 +52,8 @@ private:
     Glib::RefPtr<Gtk::ListStore> timeUnitListStore;
 
     // File paths
-    std::string prefixDir;
     std::string binDir;
+    std::string userDir;
     std::string hostageFilePath;
     std::string archivePath;
     std::string compressedPath;

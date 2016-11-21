@@ -92,11 +92,20 @@ AlarmFsck::AlarmFsck():
 	error_to_user(error.get_message() + ": Using ../", error.what());
 	baseDir  = "../";
     }
-    prefixDir = baseDir + data_dir;
-    archivePath = prefixDir + hostage_archive;
-    compressedPath = prefixDir + hostage_compressed;
-    encryptedPath = prefixDir + hostage_encrypted;
-    std::string audioPath = prefixDir + audio_file;
+    dataDir = baseDir + data_dir;
+    std::string audioPath = dataDir + audio_file;
+    
+    // read files from $HOME/.alarmfsck/
+    std::string homeDir = getenv("HOME");
+    userDir = homeDir + "/." + package_name + "/";
+    if(access(userDir.c_str(), W_OK | X_OK) == -1 && mkdir(userDir.c_str(), 0777) == -1){
+	error_to_user("Could not access " + userDir + ": Using current path.");
+	userDir = "";
+    }
+
+    archivePath = userDir + hostage_archive;
+    compressedPath = userDir + hostage_compressed;
+    encryptedPath = userDir + hostage_encrypted;
 
     // Initializes the audio bits
     canberraContext = ca_gtk_context_get();

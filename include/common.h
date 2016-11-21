@@ -7,7 +7,8 @@
 
 const int padding = 10;
 const int suggested_hours = 8;
-const std::string data_dir= "data/";
+const std::string package_name = "alarmfsck";
+const std::string data_dir= "share/";
 const std::string bin_dir= "bin/";
 const std::string hostage_file= "hostages.af";
 const std::string hostage_archive= "hostages.tar";

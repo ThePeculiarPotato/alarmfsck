@@ -1,5 +1,5 @@
 # git ls-files --others --exclude-from=.git/info/exclude
 *.o
 bin/
-data/
-!data/genocide.oga
+share/
+!share/genocide.oga
