@@ -1,3 +1,5 @@
+Note: This is an old project kept around for sentimental reasons. It might not even build successfully.
+
 # alarmfsck
 An alarm clock for Linux that fscks with your mind. It disregards absolutely
 every piece of science ever written on waking up effectively but gets the job
